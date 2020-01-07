@@ -129,5 +129,4 @@ dmypy.json
 .pyre/
 
 # Additional Files
-settings.py
 .DS_Store
