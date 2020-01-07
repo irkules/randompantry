@@ -1,72 +1,52 @@
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from .models import Post
-##from django.http import HttpResponse
-# Create your views here.
-
-posts = [
-    {
-        'author' : 'megan',
-        'title' : 'recipe',
-        'content' : 'recipe content',
-        'date_posted' : 'december 26'
-    },
-    {
-        'author' : 'alvin',
-        'title' : 'recipe2',
-        'content' : 'recipe content2',
-        'date_posted' : 'december 26'
-    }
-]
+from .models import Recipe
 
 def home(request):
     context = {
-        'posts': Post.objects.all()
+        'recipes': Recipe.objects.all()
     }
     return render(request, 'blog/home.html', context)
 
-class PostListView(ListView):
-    model = Post
+class RecipeListView(ListView):
+    model = Recipe
     template_name = 'blog/home.html'
-    # <app>/<model>_<viewtype>.html
-    context_object_name = 'posts'
-    ordering = ['-date_posted']
+    context_object_name = 'recipes'
+    ordering = ['-date']
 
-class PostDetailView(DetailView):
-    model = Post
+class RecipeDetailView(DetailView):
+    model = Recipe
 
-# form to create a new post
-class PostCreateView(LoginRequiredMixin, CreateView):
-    model = Post
-    fields = ['title', 'content']
-    # later: add ingredients field to post class above, and all other places
-
+# Form to create a new recipe
+class RecipeCreateView(LoginRequiredMixin, CreateView):
+    model = Recipe
+    fields = ['name', 'description', 'ingredient_ids', 'tag_ids', 'nutrition', 'calorie_level', 'minutes', 'steps']
+    
     def form_valid(self, form):
-        form.instance.author = self.request.user
+        form.instance.user = self.request.user
         return super().form_valid(form)
 
-class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Post
-    fields = ['title', 'content']
-    # later: add ingredients field to post class above, and all other places
+class RecipeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Recipe
+    fields = ['name', 'description', 'ingredient_ids', 'tag_ids', 'nutrition', 'calorie_level', 'minutes', 'steps']
 
     def form_valid(self, form):
-        form.instance.author = self.request.user
+        form.instance.user = self.request.user
         return super().form_valid(form)
 
     def test_func(self):
-        post = self.get_object()
-        if self.request.user == post.author:
+        recipe = self.get_object()
+        if self.request.user == recipe.user:
             return True
         return False
 
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Post
+class RecipeDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Recipe
     success_url = '/'
     def test_func(self):
-        post = self.get_object()
-        if self.request.user == post.author:
+        recipe = self.get_object()
+        if self.request.user == recipe.user:
             return True
         return False
 
