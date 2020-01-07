@@ -1,20 +1,108 @@
 {% extends "blog/base.html" %}
 {% block content %}
-    <article class="media content-section">
-        <img class ="rounded-circle article-img" src="{{ object.user.profile.image.url }}" alt="the user's profile pic.">
-        <div class="media-body">
-        <div class="article-metadata">
-            <a class="mr-2" href="#">{{ object.user }}</a>
-            <small class="text-muted">{{ object.date }}</small>
-            {% if object.user == user %}
-            <div>
-                <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'recipe-update' object.id %}"> Update </a>
-                <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'recipe-delete' object.id %}"> Delete </a>
+    <div class="container-fluid">
+        <div class="card border-0 shadow my-0">
+            <div class="card-body p-5">
+                <div class="text-center">
+                    <img src="https://img.icons8.com/ios/100/000000/cooking-book.png">
+                </div>
+
+                <h1 class="font-weight-normal recipe-detail-title pt-3">{{ recipe.name }}</h1>
+                
+                <div class="row recipe-detail-section pt-3">
+                    <div class="col">
+                        <p class="lead">Recipe by <a class="mr-2" href="#">{{ recipe.user_id }}</a></p>
+                    </div>
+                    <div class="col">
+                        <p class="lead" style="text-align: right;">{{ recipe.date }}</p>
+                    </div>
+                </div>
+                
+                <!-- TODO: REPLACE WITH URL FROM DB -->
+                <img class="recipe-detail-img pt-2" src="{{ recipe.img_url }}">
+                
+                <div class="recipe-detail-section">
+                    <p class="recipe-detail-desc pt-2">{{ recipe.description }}</p>
+                </div>
+                
+                <hr style="border-top: 3px solid black;margin: 25px;">
+
+                <div class="row recipe-detail-section">
+                    <div class="col">
+                        <h2>Ingredients</h2>
+                        <ul class=" pt-2 pb-2">
+                            {% for ingr in ingredients %}
+                                <li class="">{{ ingr }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col">
+                        <h2>Nutrition</h2>
+                        <ul class=" pt-2 pb-2">
+                            {% for nutr in recipe.nutrition %}
+                                <li class="">{{ nutr }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>             
+                </div>
+
+                <div class="recipe-detail-section">
+                    <h2>Steps</h2>
+                    <ul class="">
+                        {% for step in recipe.steps %}
+                            <li class="">{{ step }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="recipe-detail-section">
+                    <h2>Tags</h2>
+                    {% for tag in tags %}
+                        <a href="#" class="badge badge-primary">{{ tag }}</a href="#">
+                    {% endfor %}
+                </div>
+                
+                <!-- TODO: Allow user to edit review -->
+                {% if user.is_authenticated and recipe.user != user and not has_rated %}
+                <div class="recipe-detail-section">
+                    <form method = "POST">
+                        {% csrf_token %}
+                        <fieldset class = "form-group">
+                            <legend class="border-bottom mb-4">Rate This Recipe!</legend>
+                            {{ form }}
+                        </fieldset>
+                        <div class = "form-group">
+                            <button class="btn btn-outline-info" type="submit">Submit</button>
+                        </div>
+                    </form>
+                    
+                    <!-- <form>
+                        <div class="form-group">
+                            <label for="formControlRating">Rating</label>
+                            <select class="form-control" id="formControlRating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="formControlReview">Review</label>
+                            <textarea class="form-control" id="formControlReview" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form> -->
+                </div>
+                {% endif %}
+
+                {% if recipe.user == user %}
+                    <div>
+                        <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'recipe-update' recipe.id %}"> Update </a>
+                        <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'recipe-delete' recipe.id %}"> Delete </a>
+                    </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
-        <h2 class="article-title"> {{ object.name }}</h2>
-        <p class="article-content">{{ object.description }}</p>
-        </div>
-    </article>
+    </div>
 {% endblock content %}
