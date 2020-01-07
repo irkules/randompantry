@@ -76,7 +76,6 @@ def get_make_again(user_id):
         return []
     rec_ids = reviews[reviews.user_id == user_id].sort_values(by=['rating'], ascending=False)[:15].recipe_id.values
     recs = get_recipes(rec_ids)[['id', 'name', 'description', 'img_url']]
-    recs['img_url'] = 'https://images.pexels.com/photos/574114/pexels-photo-574114.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
     recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].values
     recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': x[4]} for x in recs.values]
     return recs
@@ -91,7 +90,6 @@ def get_top_rated():
     rev = rev.sort_values(by=['rating', 'count'],ascending=[False, False])[:15]
     rec_ids = rev.recipe_id.values
     recs = get_recipes(rec_ids)[['id', 'name', 'description', 'img_url']]
-    recs['img_url'] = 'https://images.pexels.com/photos/574114/pexels-photo-574114.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'
     recs['rating'] = rev.rating.values
     recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': x[4]} for x in recs.values]
     return recs
