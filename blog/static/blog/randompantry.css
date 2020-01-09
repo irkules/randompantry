@@ -185,6 +185,10 @@ body {
     padding: 15px 4% 15px 4%;
 }
 
+.recipe-detail-checked {
+    color: orange;
+}
+
 /* Old main css */
 
 .content-section {

@@ -1,4 +1,5 @@
 {% extends "blog/base.html" %}
+{% load static %}
 {% block content %}
             
     <!-- Recommended Content -->
@@ -18,7 +19,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -39,6 +45,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -68,7 +82,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -89,6 +108,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -118,7 +145,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -139,6 +171,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -168,7 +208,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -189,6 +234,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -218,7 +271,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -239,6 +297,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -268,7 +334,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -289,6 +360,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -318,7 +397,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -339,6 +423,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
@@ -368,7 +460,12 @@
                             <a href="#modal_{{ rec.id }}" data-toggle="modal">
                                 <div class="overlay">
                                     <h2>{{ rec.name }}</h2>
-                                    <p>{{ rec.desc }}</p>
+                                    {% for _ in rec.rating %}
+                                        <span class="fa fa-star recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in rec.rating_null %}
+                                        <span class="fa fa-star"></span>    
+                                    {% endfor %}
                                 </div>
                             </a>
                         </div>
@@ -389,6 +486,14 @@
                         <!-- Modal body -->
                         <div class="modal-body">
                             <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                            <div>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star"></span>    
+                                {% endfor %}
+                            </div>
                             <p class="recipe-detail-section">{{ rec.desc }}</p>
                         </div>
                         <!-- Modal footer -->
