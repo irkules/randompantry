@@ -72,6 +72,9 @@ def get_recommended(user_id):
         recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
         return recs
 
+def clear_recommended_cache():
+    cache.delete('svd_predictions')
+
 # Favorites
 def get_favourites(user_id):
     # TODO: Needs implentation
@@ -155,31 +158,42 @@ def get_similar_rating(recipe_id):
     reviews = get_reviews()
     if len(reviews) == 0:
         return []
+    KNNBaseline_cache_key = 'KNNBaseline'
+    if KNNBaseline_cache_key in cache:
+        model = cache.get(KNNBaseline_cache_key)
     else:
         reviews = reviews[['user_id', 'recipe_id', 'rating']]
         data = Dataset.load_from_df(reviews, Reader(rating_scale=(1, 5)))
         trainset = data.build_full_trainset()
-        model = KNNBaseline(k=100, sim_options={'name': 'pearson_baseline', 'user_based': False}, verbose=False)
+        model = KNNBaseline(sim_options={'name': 'pearson_baseline', 'user_based': False}, verbose=False)
         model.fit(trainset)
-        inner_id = model.trainset.to_inner_iid(recipe_id)
-        nearest_recipe_inner_ids = model.get_neighbors(inner_id, k=15)
-        nearest_recipe_ids = [model.trainset.to_raw_iid(id) for id in nearest_recipe_inner_ids]
-        nearest_recipes = get_recipes(rec_ids=nearest_recipe_ids)[['id', 'name', 'description', 'img_url']]
-        reviews = get_reviews()
-        nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
-        nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
+        cache.set(KNNBaseline_cache_key, model)
+    inner_id = model.trainset.to_inner_iid(recipe_id)
+    nearest_recipe_inner_ids = model.get_neighbors(inner_id, k=15)
+    nearest_recipe_ids = [model.trainset.to_raw_iid(id) for id in nearest_recipe_inner_ids]
+    nearest_recipes = get_recipes(rec_ids=nearest_recipe_ids)[['id', 'name', 'description', 'img_url']]
+    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
+    nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
     return nearest_recipes
 
 def get_similar_ingr(recipe_id):
     recipes = get_recipes()
     if len(recipes) == 0:
         return []
-    mlb = MultiLabelBinarizer(sparse_output = True)
-    ingredients = mlb.fit_transform(recipes.ingredient_ids)
-    tsvd = TruncatedSVD(n_components = 100, random_state = 2019)
-    ingredients = tsvd.fit_transform(ingredients)
-    model = NearestRecipes(k = 16)
-    model.fit(ingredients)
+    NRIngr_cache_key = 'NRIngr'
+    ingr_cache_key = 'ingr'
+    if (NRIngr_cache_key in cache) and (ingr_cache_key in cache):
+        model = cache.get(NRIngr_cache_key)
+        ingredients = cache.get(ingr_cache_key)
+    else:
+        mlb = MultiLabelBinarizer(sparse_output = True)
+        ingredients = mlb.fit_transform(recipes.ingredient_ids)
+        tsvd = TruncatedSVD(n_components = 100, random_state = 2019)
+        ingredients = tsvd.fit_transform(ingredients)
+        cache.set(ingr_cache_key, ingredients)
+        model = NearestRecipes(k = 16)
+        model.fit(ingredients)
+        cache.set(NRIngr_cache_key, model)
     nearest_recipe_ids = model.get_nearest_recipes(
         test = ingredients[recipes['id'] == recipe_id], 
         train_id = recipes['id'].values)[0][-15:]
@@ -193,12 +207,20 @@ def get_similar_tags(recipe_id):
     recipes = get_recipes()
     if len(recipes) == 0:
         return []
-    mlb = MultiLabelBinarizer(sparse_output = True)
-    tags = mlb.fit_transform(recipes.tag_ids)
-    tsvd = TruncatedSVD(n_components = 100, random_state = 2019)
-    tags = tsvd.fit_transform(tags)
-    model = NearestRecipes(k = 16)
-    model.fit(tags)
+    NRTags_cache_key = 'NRTags'
+    tags_cache_key = 'tags'
+    if (NRTags_cache_key in cache) and (tags_cache_key in cache):
+        model = cache.get(NRTags_cache_key)
+        tags = cache.get(tags_cache_key)
+    else:
+        mlb = MultiLabelBinarizer(sparse_output = True)
+        tags = mlb.fit_transform(recipes.tag_ids)
+        tsvd = TruncatedSVD(n_components = 100, random_state = 2019)
+        tags = tsvd.fit_transform(tags)
+        cache.set(tags_cache_key, tags)
+        model = NearestRecipes(k = 16)
+        model.fit(tags)
+        cache.set(NRTags_cache_key, model)
     nearest_recipe_ids = model.get_nearest_recipes(
         test = tags[recipes['id'] == recipe_id], 
         train_id = recipes['id'].values)[0][-15:]
@@ -212,9 +234,14 @@ def get_similar_nutr(recipe_id):
     recipes = get_recipes()
     if len(recipes) == 0:
         return []
-    nutrition = recipes.nutrition.values.tolist()
-    model = NearestRecipes(k = 16)
-    model.fit(nutrition)
+    NRNutr_cache_key = 'NRNutr'
+    if NRNutr_cache_key in cache:
+        model = cache.get(NRNutr_cache_key)
+    else:
+        nutrition = recipes.nutrition.values.tolist()
+        model = NearestRecipes(k = 16)
+        model.fit(nutrition)
+        cache.set(NRNutr_cache_key, model)
     nearest_recipe_ids = model.get_nearest_recipes(
         test = recipes.nutrition[recipes['id'] == recipe_id].tolist(), 
         train_id = recipes['id'].values)[0][-15:]
@@ -223,3 +250,11 @@ def get_similar_nutr(recipe_id):
     nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
     nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
     return nearest_recipes
+
+def clear_similar_recipes_cache():
+    cache.delete('KNNBaseline')
+    cache.delete('NRIngr')
+    cache.delete('ingr')
+    cache.delete('NRTags')
+    cache.delete('tags')
+    cache.delete('NRNutr')

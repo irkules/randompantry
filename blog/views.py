@@ -26,7 +26,6 @@ def home(request):
 
 # TODO: This needs improvement
 # TODO: Add to favourites
-# TODO: Return average rating for current recipe
 def recipe_detail_view(request, pk):
     # Review Form
     if request.method == 'POST':
@@ -39,14 +38,15 @@ def recipe_detail_view(request, pk):
                 user_id=request.user.id
             )
             messages.success(request, f'Thank you for rating!')
-            # Remove outdated cached SVD predictions
-            cache.delete('svd_predictions')
+            # Remove outdated cached data
+            content.clear_recommended_cache()
+            content.clear_similar_recipes_cache()
     else:
         form = UserReviewForm()
+    
     # Recipe-detail content
     recipe = Recipe.objects.get(pk=pk)
     rating = int(np.round(pd.DataFrame(list(Review.objects.all().filter(recipe_id=pk).values())).rating.mean()))
-
     context = {
         'title': 'RANDOM PANTRY! - Recipe',
         'recipe': recipe,
@@ -70,6 +70,7 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        content.clear_similar_recipes_cache()
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
@@ -83,6 +84,7 @@ class RecipeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        content.clear_similar_recipes_cache()
         return super().form_valid(form)
 
     def test_func(self):
@@ -106,6 +108,7 @@ class RecipeDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return False
 
     def get_context_data(self, **kwargs):
+        content.clear_similar_recipes_cache()
         data = super().get_context_data(**kwargs)
         data['title'] = 'RANDOM PANTRY! - Delete Recipe'
         return data
