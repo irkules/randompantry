@@ -6,6 +6,7 @@ dj-database-url==0.5.0
 Django==2.2.5
 django-crispy-forms==1.8.1
 django-heroku==0.3.1
+django-redis-cache==2.1.0
 django-storages==1.8
 docutils==0.15.2
 gunicorn==20.0.4
@@ -17,6 +18,7 @@ Pillow==7.0.0
 psycopg2==2.8.4
 python-dateutil==2.8.1
 pytz==2019.3
+redis==3.3.11
 requests==2.22.0
 s3transfer==0.2.1
 scikit-learn==0.21.3
