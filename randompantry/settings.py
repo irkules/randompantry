@@ -133,3 +133,14 @@ LOGIN_REDIRECT_URL = 'blog-home'
 LOGIN_URL = 'login'
 
 django_heroku.settings(locals())
+
+
+# Caching with Redis
+# https://devcenter.heroku.com/articles/heroku-redis#connecting-in-python
+
+CACHES = {
+    "default": {
+         "BACKEND": "redis_cache.RedisCache",
+         "LOCATION": os.environ.get('REDIS_URL'),
+    }
+}

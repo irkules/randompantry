@@ -1,7 +1,8 @@
-from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.cache import cache
+from django.shortcuts import render
 from django.views.generic import CreateView, UpdateView, DeleteView
 from .models import Recipe, Review
 from .forms import UserReviewForm
@@ -34,7 +35,8 @@ def recipe_detail_view(request, pk):
                 user_id=request.user.id
             )
             messages.success(request, f'Thank you for rating!')
-            # return HttpResponseRedirect(request.path_info)
+            # Remove outdated cached SVD predictions
+            cache.delete('svd_predictions')
     else:
         form = UserReviewForm()
 

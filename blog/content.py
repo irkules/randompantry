@@ -1,3 +1,4 @@
+from django.core.cache import cache
 import numpy as np
 import pandas as pd
 from collections import defaultdict
@@ -6,7 +7,9 @@ from surprise import Reader
 from surprise import SVD
 from .models import Ingredient, Recipe, Review, Tag
 
-# TODO: All content delivery functions need improvements
+# TODO: Needs refactoring
+
+# Landing Page content helpers
 
 def get_reviews():
     df = pd.DataFrame(list(Review.objects.all().values()))
@@ -45,15 +48,20 @@ def get_recommended(user_id):
     if (reviews.user_id != user_id).all():
         return []
     else:
-        data = Dataset.load_from_df(reviews, Reader(rating_scale=(1, 5)))
-        trainset = data.build_full_trainset()
-        testset = trainset.build_anti_testset()
-        # Train SVD
-        model = SVD(random_state = 2019, verbose = True)
-        model.fit(trainset)
-        predictions = model.test(testset)
-        top_n = get_top_n(predictions, n = 15)
+        predictions_cache_key = 'svd_predictions'
+        if predictions_cache_key in cache:
+            predictions = cache.get(predictions_cache_key)
+        else:
+            data = Dataset.load_from_df(reviews, Reader(rating_scale=(1, 5)))
+            trainset = data.build_full_trainset()
+            testset = trainset.build_anti_testset()
+            # Train SVD
+            model = SVD(random_state = 2019)
+            model.fit(trainset)
+            predictions = model.test(testset)
+            cache.set(predictions_cache_key, predictions)
         # Get recommended recipes
+        top_n = get_top_n(predictions, n = 15)
         rec_ids = np.array(top_n[user_id])[:, 0]
         recs = get_recipes(rec_ids)[['id', 'name', 'description', 'img_url']]
         # Add average ratings
@@ -113,10 +121,6 @@ def get_top_tags():
     recs_3 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': x[4]} for x in recs_3.values]
     return recs_1, recs_2, recs_3
 
-def get_nutr_pick():
-    # TODO: Needs implementation
-    return []
-
 def get_ingr(ingr_ids = None):
     if ingr_ids is None:
         querySet = Ingredient.objects.all()
@@ -138,3 +142,21 @@ def get_tags(tag_ids = None):
     if tag_ids is not None:
         df = df.loc[tag_ids].reset_index(drop=True)
     return df.name.values
+
+# TODO: Needs implementation
+def get_nutr_pick():
+    return []
+
+# TODO: Recipe details page content helpers
+
+def get_similar_ingr(recipes_data, current_recipe_id):
+    return []
+
+def get_similar_tags(recipes_data, current_recipe_id):
+    return []
+
+def get_similar_nutr(recipes_data, current_recipe_id):
+    return []
+
+def get_similar_recipes_rating(recipes_data, current_recipe_id):
+    return []
