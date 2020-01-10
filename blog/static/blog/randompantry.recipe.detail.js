@@ -2,7 +2,7 @@
 var sliderSettings = {
     item: 5,
     loop: false,
-    slideMove: 2,
+    slideMove: 5,
     eag: 'cubic-bezier(0.25, 0, 0.25, 1)',
     speed: 600,
     responsive: [

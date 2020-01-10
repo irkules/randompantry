@@ -182,7 +182,12 @@ body {
 }
 
 .recipe-detail-section {
+    
     padding: 15px 4% 15px 4%;
+    text-align: center;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .recipe-detail-checked {
@@ -208,4 +213,26 @@ body {
   
 .account-heading {
     font-size: 2.5rem;
+}
+
+/* About */
+
+.rp-about {
+    padding: 20px;
+    color: white;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+}
+
+/* Recipe descriptions modal */
+
+.recipe-descriptions-pop{
+    text-align: center;
+}
+
+/* star ratings center alignment ... not working yet*/
+.star-center{
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }

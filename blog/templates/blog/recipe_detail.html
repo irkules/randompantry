@@ -13,10 +13,10 @@
                 <div class="row recipe-detail-section pt-3">
                     <div class="col">
                         {% for _ in rating %}
-                            <span class="fa fa-star recipe-detail-checked"></span>    
+                            <span class="fa fa-star star-center recipe-detail-checked"></span>    
                         {% endfor %}
                         {% for _ in rating_null %}
-                            <span class="fa fa-star"></span>    
+                            <span class="fa fa-star star-center"></span>    
                         {% endfor %}
                         <p class="lead">Recipe by <a class="mr-2" href="#">{{ recipe.user_id }}</a></p>
                     </div>
@@ -105,7 +105,8 @@
 
                 {% if recipe.user == user %}
                     <div>
-                        <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'recipe-update' recipe.id %}"> Update </a>
+                        <!-- edit recipe button hidden for now, until we can make the form-->
+                        <!-- <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'recipe-update' recipe.id %}"> Update </a> -->
                         <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'recipe-delete' recipe.id %}"> Delete </a>
                     </div>
                 {% endif %}
@@ -129,10 +130,10 @@
                                             <div class="overlay">
                                                 <h2>{{ rec.name }}</h2>
                                                 {% for _ in rec.rating %}
-                                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                                 {% endfor %}
                                                 {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star"></span>    
+                                                    <span class="fa fa-star star-center"></span>    
                                                 {% endfor %}
                                             </div>
                                         </a>
@@ -156,10 +157,10 @@
                                         <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
                                         <div>
                                             {% for _ in rec.rating %}
-                                                <span class="fa fa-star recipe-detail-checked"></span>    
+                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                             {% endfor %}
                                             {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star"></span>    
+                                                <span class="fa fa-star star-center"></span>    
                                             {% endfor %}
                                         </div>
                                         <p class="recipe-detail-section">{{ rec.desc }}</p>
@@ -191,10 +192,10 @@
                                             <div class="overlay">
                                                 <h2>{{ rec.name }}</h2>
                                                 {% for _ in rec.rating %}
-                                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                                 {% endfor %}
                                                 {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star"></span>    
+                                                    <span class="fa fa-star star-center"></span>    
                                                 {% endfor %}
                                             </div>
                                         </a>
@@ -218,10 +219,10 @@
                                         <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
                                         <div>
                                             {% for _ in rec.rating %}
-                                                <span class="fa fa-star recipe-detail-checked"></span>    
+                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                             {% endfor %}
                                             {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star"></span>    
+                                                <span class="fa fa-star star-center"></span>    
                                             {% endfor %}
                                         </div>
                                         <p class="recipe-detail-section">{{ rec.desc }}</p>
@@ -253,10 +254,10 @@
                                             <div class="overlay">
                                                 <h2>{{ rec.name }}</h2>
                                                 {% for _ in rec.rating %}
-                                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                                 {% endfor %}
                                                 {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star"></span>    
+                                                    <span class="fa fa-star star-center"></span>    
                                                 {% endfor %}
                                             </div>
                                         </a>
@@ -280,10 +281,10 @@
                                         <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
                                         <div>
                                             {% for _ in rec.rating %}
-                                                <span class="fa fa-star recipe-detail-checked"></span>    
+                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                             {% endfor %}
                                             {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star"></span>    
+                                                <span class="fa fa-star star-center"></span>    
                                             {% endfor %}
                                         </div>
                                         <p class="recipe-detail-section">{{ rec.desc }}</p>
@@ -315,10 +316,10 @@
                                             <div class="overlay">
                                                 <h2>{{ rec.name }}</h2>
                                                 {% for _ in rec.rating %}
-                                                    <span class="fa fa-star recipe-detail-checked"></span>    
+                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                                 {% endfor %}
                                                 {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star"></span>    
+                                                    <span class="fa fa-star star-center"></span>    
                                                 {% endfor %}
                                             </div>
                                         </a>
@@ -342,10 +343,10 @@
                                         <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
                                         <div>
                                             {% for _ in rec.rating %}
-                                                <span class="fa fa-star recipe-detail-checked"></span>    
+                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
                                             {% endfor %}
                                             {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star"></span>    
+                                                <span class="fa fa-star star-center"></span>    
                                             {% endfor %}
                                         </div>
                                         <p class="recipe-detail-section">{{ rec.desc }}</p>

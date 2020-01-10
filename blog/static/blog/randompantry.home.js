@@ -2,7 +2,7 @@
 var sliderSettings = {
     item: 5,
     loop: false,
-    slideMove: 2,
+    slideMove: 5,
     eag: 'cubic-bezier(0.25, 0, 0.25, 1)',
     speed: 600,
     responsive: [
@@ -34,4 +34,6 @@ $(document).ready(function() {
     $('#tagSlider_2').lightSlider(sliderSettings);
     $('#tagSlider_3').lightSlider(sliderSettings); 
     $('#nutrSlider').lightSlider(sliderSettings);
+    $('#mrSlider').lightSlider(sliderSettings);
+
 });
