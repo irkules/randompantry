@@ -18,6 +18,7 @@ def home(request):
     top_tags = content.get_top_tags()
     context = {
         'title': 'RANDOM PANTRY!',
+        'my_recipes': [],
         'recommendations': content.get_recommended(request.user.id),
         'favourites': content.get_favourites(request.user.id),
         'make_again': content.get_make_again(request.user.id),
@@ -25,6 +26,7 @@ def home(request):
         'top_tag_1': top_tags[0],
         'top_tag_2': top_tags[1],
         'top_tag_3': top_tags[2]
+
     }
     return render(request, 'blog/home.html', context)
 
