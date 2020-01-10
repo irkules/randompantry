@@ -39,6 +39,20 @@ def get_top_n(predictions, n):
         top_n[uid] = user_ratings[:n]
     return top_n
 
+# My recipes
+def get_my_recipes(user_id):
+    recipes = get_recipes()
+    if len(recipes == 0) or (recipes.user_id != user_id).all():
+        return []
+    recs = recipes[recipes.user_id == user_id].sort_values(by=['date'], ascending=False)
+    rec_ids = recs['id'].values
+    # Add average ratings
+    reviews = get_reviews()
+    recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].fillna(0).values
+    # Convert to django context format
+    recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
+    return recs
+
 # Recommended
 def get_recommended(user_id):
     reviews = get_reviews()
@@ -67,7 +81,7 @@ def get_recommended(user_id):
         rec_ids = np.array(top_n[user_id])[:, 0]
         recs = get_recipes(rec_ids)[['id', 'name', 'description', 'img_url']]
         # Add average ratings
-        recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].values
+        recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].fillna(0).values
         # Convert to django context format
         recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
         return recs
@@ -89,7 +103,7 @@ def get_make_again(user_id):
         return []
     rec_ids = reviews[reviews.user_id == user_id].sort_values(by=['rating'], ascending=False)[:15].recipe_id.values
     recs = get_recipes(rec_ids)[['id', 'name', 'description', 'img_url']]
-    recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].values
+    recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].fillna(0).values
     recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
     return recs
 
@@ -118,9 +132,9 @@ def get_top_tags():
     recs_2 = recs_explode[recs_explode.tag_ids == top_tag_ids[1]].sample(n=15)[['id', 'name', 'description', 'img_url']]
     recs_3 = recs_explode[recs_explode.tag_ids == top_tag_ids[2]].sample(n=15)[['id', 'name', 'description', 'img_url']]
     reviews = get_reviews()
-    recs_1['rating'] = reviews[reviews.recipe_id.isin(recs_1.id)].groupby('recipe_id').rating.mean()[recs_1.id].values
-    recs_2['rating'] = reviews[reviews.recipe_id.isin(recs_2.id)].groupby('recipe_id').rating.mean()[recs_2.id].values
-    recs_3['rating'] = reviews[reviews.recipe_id.isin(recs_3.id)].groupby('recipe_id').rating.mean()[recs_3.id].values    
+    recs_1['rating'] = reviews[reviews.recipe_id.isin(recs_1.id)].groupby('recipe_id').rating.mean()[recs_1.id].fillna(0).values
+    recs_2['rating'] = reviews[reviews.recipe_id.isin(recs_2.id)].groupby('recipe_id').rating.mean()[recs_2.id].fillna(0).values
+    recs_3['rating'] = reviews[reviews.recipe_id.isin(recs_3.id)].groupby('recipe_id').rating.mean()[recs_3.id].fillna(0).values    
     recs_1 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs_1.values]
     recs_2 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs_2.values]
     recs_3 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs_3.values]
@@ -158,6 +172,8 @@ def get_similar_rating(recipe_id):
     reviews = get_reviews()
     if len(reviews) == 0:
         return []
+    if (reviews.recipe_id != recipe_id).all():
+        return []
     KNNBaseline_cache_key = 'KNNBaseline'
     if KNNBaseline_cache_key in cache:
         model = cache.get(KNNBaseline_cache_key)
@@ -172,7 +188,7 @@ def get_similar_rating(recipe_id):
     nearest_recipe_inner_ids = model.get_neighbors(inner_id, k=15)
     nearest_recipe_ids = [model.trainset.to_raw_iid(id) for id in nearest_recipe_inner_ids]
     nearest_recipes = get_recipes(rec_ids=nearest_recipe_ids)[['id', 'name', 'description', 'img_url']]
-    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
+    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
     nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
     return nearest_recipes
 
@@ -199,7 +215,7 @@ def get_similar_ingr(recipe_id):
         train_id = recipes['id'].values)[0][-15:]
     nearest_recipes = get_recipes(rec_ids=nearest_recipe_ids)[['id', 'name', 'description', 'img_url']]
     reviews = get_reviews()
-    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
+    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
     nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
     return nearest_recipes
 
@@ -226,7 +242,7 @@ def get_similar_tags(recipe_id):
         train_id = recipes['id'].values)[0][-15:]
     nearest_recipes = get_recipes(rec_ids=nearest_recipe_ids)[['id', 'name', 'description', 'img_url']]
     reviews = get_reviews()
-    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
+    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
     nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
     return nearest_recipes
 
@@ -247,7 +263,7 @@ def get_similar_nutr(recipe_id):
         train_id = recipes['id'].values)[0][-15:]
     nearest_recipes = get_recipes(rec_ids=nearest_recipe_ids)[['id', 'name', 'description', 'img_url']]
     reviews = get_reviews()
-    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].values
+    nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
     nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
     return nearest_recipes
 
