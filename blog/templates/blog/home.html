@@ -35,7 +35,7 @@
  </div>
  <!-- My recipes Modals -->
  {% for mine in my_recipes %}
-     <div class="modal fade" id="modal_{{ rec.id }}">
+     <div class="modal fade" id="modal_{{ mine.id }}">
          <div class="modal-dialog modal-lg">
              <div class="modal-content">            
                  <!-- Modal Header -->
@@ -58,7 +58,7 @@
                  </div>
                  <!-- Modal footer -->
                  <div class="modal-footer">
-                     <a href="{% url 'recipe-detail' rec.id %}">Click here to see full recipe</a>
+                     <a href="{% url 'recipe-detail' mine.id %}">Click here to see full recipe</a>
                  </div>
              </div>
          </div>

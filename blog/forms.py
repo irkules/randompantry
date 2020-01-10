@@ -19,5 +19,5 @@ class RecipeCreateForm(forms.Form):
     carbo = forms.FloatField(label='Total Carbohydrate (% Daily Value)', min_value=0, max_value=1000)
     calorie_level = forms.IntegerField(label='Calorie Level (0-2)', min_value=0, max_value=2)
     minutes = forms.IntegerField(label='Minutes', min_value=1, max_value=5000)
-    steps = forms.CharField(label='Steps')
+    steps = forms.CharField(label='Steps (Seperated by ",")')
     img_url = forms.URLField(label='Image URL')

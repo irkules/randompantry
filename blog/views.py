@@ -7,7 +7,6 @@ from django.core.validators import URLValidator
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.views.generic import CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
 import numpy as np
 import pandas as pd
 from .models import Recipe, Review, Ingredient, Tag
@@ -18,7 +17,7 @@ def home(request):
     top_tags = content.get_top_tags()
     context = {
         'title': 'RANDOM PANTRY!',
-        'my_recipes': [],
+        'my_recipes': content.get_my_recipes(request.user.id),
         'recommendations': content.get_recommended(request.user.id),
         'favourites': content.get_favourites(request.user.id),
         'make_again': content.get_make_again(request.user.id),
@@ -66,7 +65,7 @@ def recipe_detail_view(request, pk):
     if (users.id != recipe.user_id).all():
         author = 'Food.com'
     else:
-        author = users.loc[users.id != recipe.user_id, 'username'].values()
+        author = users[users.id == recipe.user_id]['username'].values[0]
 
     context = {
         'title': 'RANDOM PANTRY! - Recipe',
