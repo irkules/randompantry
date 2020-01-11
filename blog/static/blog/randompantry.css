@@ -184,10 +184,6 @@ body {
 .recipe-detail-section {
     
     padding: 15px 4% 15px 4%;
-    text-align: center;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .recipe-detail-checked {

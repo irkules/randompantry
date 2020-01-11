@@ -21,7 +21,7 @@
                         <p class="lead">Recipe by <a class="mr-2" href="#">{{ author }}</a></p>
                     </div>
                     <div class="col">
-                        <p class="lead mt-3" style="text-align: right;">{{ recipe.date }}</p>
+                        <p class="lead mt-3" style="text-align: right;">{{ recipe.date|date:"M d, Y" }}</p>
                     </div>
                 </div>
                 

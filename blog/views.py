@@ -80,9 +80,12 @@ def recipe_detail_view(request, pk):
         'similar_rating': content.get_similar_rating(pk),
         'similar_ingr': content.get_similar_ingr(pk),
         'similar_tags': content.get_similar_tags(pk),
-        'similar_nutr': content.get_similar_nutr(pk)
+        'similar_nutr': content.get_similar_nutr(pk),
+        # 'nutrition_labels': ['Calories', 'Total fat (% Daily Value)', 'Sugar (% Daily Value)', 'Sodium (% Daily Value)', 'Protein (% Daily Value)', 'Saturated fat (% Daily Value)', 'Total Carbohydrate (% Daily Value)']
     }
     return render(request, 'blog/recipe_detail.html', context)
+    
+
 
 def strip_punc(sentence):
     punc_list = [".",";",":","!","?","/","\\","#","@","$","&",")","(","\""]
