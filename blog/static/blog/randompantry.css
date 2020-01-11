@@ -190,6 +190,18 @@ body {
     color: orange;
 }
 
+.recipe-detail-nutr span {
+    display: inline-block;
+    width: 50px;
+    text-align: right;
+}
+
+.recipe-detail-nutr label {
+    display: inline-block;
+    width: 280px;
+    padding-left: 25px;
+}​
+
 /* Old main css */
 
 .content-section {

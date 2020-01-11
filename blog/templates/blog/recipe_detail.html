@@ -25,7 +25,6 @@
                     </div>
                 </div>
                 
-                <!-- TODO: REPLACE WITH URL FROM DB -->
                 <img class="recipe-detail-img pt-2" src="{{ recipe.img_url }}">
                 
                 <div class="recipe-detail-section">
@@ -45,11 +44,34 @@
                     </div>
                     <div class="col">
                         <h2>Nutrition</h2>
-                        <ul class=" pt-2 pb-2">
-                            {% for nutr in recipe.nutrition %}
-                                <li class="">{{ nutr }}</li>
-                            {% endfor %}
-                        </ul>
+                        <div class="block recipe-detail-nutr">
+                            <label>Calories (Amount per Serving):</label> 
+                            <span class="d-inline-block">{{ recipe.nutrition.0 }}</span> 
+                        </div>
+                        <div class="block recipe-detail-nutr">
+                            <label class="">Total Fat (% Daily Value):</label> 
+                            <span>{{ recipe.nutrition.1 }}</span>
+                        </div>
+                        <div class="block recipe-detail-nutr">
+                            <label class="">Sugar (% Daily Value):</label> 
+                            <span>{{ recipe.nutrition.2 }}</span>
+                        </div>
+                        <div class="block recipe-detail-nutr">
+                            <label>Sodium (% Daily Value):</label> 
+                            <span>{{ recipe.nutrition.3 }}</span>
+                        </div>
+                        <div class="block recipe-detail-nutr">
+                            <label>Protein (% Daily Value):</label> 
+                            <span>{{ recipe.nutrition.4 }}</span>
+                        </div>
+                        <div class="block recipe-detail-nutr">
+                            <label>Saturated Fat (% Daily Value):</label> 
+                            <span>{{ recipe.nutrition.5 }}</span>
+                        </div>
+                        <div class="block recipe-detail-nutr">
+                            <label>Total Carbohydrate (% Daily Value):</label> 
+                            <span>{{ recipe.nutrition.6 }}</span>
+                        </div>
                     </div>             
                 </div>
 
