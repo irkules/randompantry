@@ -3,7 +3,7 @@
 ![Landing-Page](./Landing-Page.png)
 
 ## Overview
-Random Pantry is a recipe recommender system that uses Machine Learning to give you recipes that you will enjoy! We're still working on it, but feel free to have a look around at what we have so far :)
+Random Pantry is a recipe recommender system that uses Machine Learning to give you recipes that you will enjoy! We're still working on it, but feel free to have a look around at what we have so far :D
 
 
 ## Technologies
