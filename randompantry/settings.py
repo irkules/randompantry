@@ -10,21 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
-import os
-import django_heroku
+from os import environ, path
+from django_heroku import settings
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = path.dirname(path.dirname(path.abspath(__file__)))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
+DEBUG = environ.get('DEBUG_VALUE') == 'True'
 
 ALLOWED_HOSTS = ['randompantry.herokuapp.com']
 
@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.staticfiles'
 ]
 
 MIDDLEWARE = [
@@ -49,7 +49,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware'
 ]
 
 ROOT_URLCONF = 'randompantry.urls'
@@ -66,8 +66,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-        },
-    },
+        }
+    }
 ]
 
 WSGI_APPLICATION = 'randompantry.wsgi.application'
@@ -78,10 +78,17 @@ WSGI_APPLICATION = 'randompantry.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'randompantry',
+        'USER': 'postgres',
+        'PASSWORD': environ.get('DATABASE_PASSWORD'),
+        'HOST': '127.0.0.1',
+        'PORT': '5432'
     }
 }
+
+# django-heroku
+settings(locals())
 
 
 # Password validation
@@ -89,26 +96,26 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'
+    }
 ]
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-ca'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Canada/Pacific'
 
 USE_I18N = True
 
@@ -120,10 +127,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -131,15 +138,21 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'blog-home'
 LOGIN_URL = 'login'
 
-django_heroku.settings(locals())
 
-
-# Caching with Redis
+# Redis Cache
 # https://devcenter.heroku.com/articles/heroku-redis#connecting-in-python
 
-CACHES = {
-    "default": {
-         "BACKEND": "redis_cache.RedisCache",
-         "LOCATION": os.environ.get('REDIS_URL'),
+REDIS_URL = environ.get('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': "redis_cache.RedisCache",
+            'LOCATION': REDIS_URL
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+        }
+    }
