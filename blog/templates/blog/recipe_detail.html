@@ -91,8 +91,7 @@
                     {% endfor %}
                 </div>
                 
-                <!-- TODO: Allow user to edit review -->
-                {% if user.is_authenticated and recipe.user != user and not has_rated %}
+                {% if not has_rated %}
                 <div class="recipe-detail-section">
                     <form method = "POST">
                         {% csrf_token %}
@@ -105,14 +104,6 @@
                         </div>
                     </form>
                 </div>
-                {% endif %}
-
-                {% if recipe.user == user %}
-                    <div>
-                        <!-- edit recipe button hidden for now, until we can make the form-->
-                        <!-- <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'recipe-update' recipe.id %}"> Update </a> -->
-                        <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'recipe-delete' recipe.id %}"> Delete </a>
-                    </div>
                 {% endif %}
 
                 <!-- Similar Recipes -->

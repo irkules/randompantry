@@ -33,8 +33,6 @@ ALLOWED_HOSTS = ['randompantry.herokuapp.com']
 
 INSTALLED_APPS = [
     'blog.apps.BlogConfig',
-    'users.apps.UsersConfig',
-    'crispy_forms',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -133,26 +131,15 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-LOGIN_REDIRECT_URL = 'blog-home'
-LOGIN_URL = 'login'
-
-
-# Redis Cache
-# https://devcenter.heroku.com/articles/heroku-redis#connecting-in-python
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+    }
+}
 
 REDIS_URL = environ.get('REDIS_URL')
 if REDIS_URL:
-    CACHES = {
-        'default': {
-            'BACKEND': "redis_cache.RedisCache",
-            'LOCATION': REDIS_URL
-        }
-    }
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
-        }
-    }
+    default = CACHES['default']
+    default['BACKEND'] = 'redis_cache.RedisCache'
+    default['LOCATION'] = REDIS_URL

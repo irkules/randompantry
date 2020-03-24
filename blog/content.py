@@ -39,29 +39,8 @@ def get_top_n(predictions, n):
         top_n[uid] = user_ratings[:n]
     return top_n
 
-# My recipes
-def get_my_recipes(user_id):
-    recipes = get_recipes()
-    if len(recipes) == 0:
-        return []
-    if (recipes.user_id != user_id).all():
-        return []
-    recs = recipes[recipes.user_id == user_id].sort_values(by=['date'], ascending=False)
-    recs = recs[['id', 'name', 'description', 'img_url']]
-    rec_ids = recs['id'].values
-    # Add average ratings
-    reviews = get_reviews()
-    mean_rating = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()
-    if len(mean_rating) == 0:
-        recs['rating'] = 0
-    else:
-        recs['rating'] = mean_rating[rec_ids].fillna(0).values
-    # Convert to django context format
-    recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
-    return recs
-
 # Recommended
-def get_recommended(user_id):
+def get_recommended(user_id = 1):
     reviews = get_reviews()
     if len(reviews) == 0:
         return []
@@ -97,12 +76,12 @@ def clear_recommended_cache():
     cache.delete('svd_predictions')
 
 # Favorites
-def get_favourites(user_id):
+def get_favourites(user_id = 1):
     # TODO: Needs implentation
     return []
 
 # Make Again
-def get_make_again(user_id):
+def get_make_again(user_id = 1):
     reviews = get_reviews()
     if len(reviews) == 0:
         return []
