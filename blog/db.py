@@ -5,7 +5,7 @@ def get_home(columns=['id', 'recommended', 'favourites', 'make_again', 'top_rate
     data = { column: [] for column in columns }
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
-        SELECT {columns_str}
+        SELECT id, {columns_str}
         FROM blog_home
     '''
     rawQuerySet = Home.objects.raw(query)
@@ -18,7 +18,7 @@ def get_home(columns=['id', 'recommended', 'favourites', 'make_again', 'top_rate
 def get_ingredients(ingredient_ids=[], columns=['id', 'name']):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
-        SELECT {columns_str}
+        SELECT id, {columns_str}
         FROM blog_ingredient
     '''
     if len(ingredient_ids):
@@ -44,7 +44,7 @@ def get_recipes(
     ]):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
-        SELECT {columns_str}
+        SELECT id, {columns_str}
         FROM blog_recipe
     '''
     if len(recipe_ids):
@@ -64,7 +64,7 @@ def get_recipes(
 def get_reviews(review_ids=[], columns=['id', 'rating', 'review', 'date', 'recipe_id', 'user_id']):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
-        SELECT {columns_str}
+        SELECT id, {columns_str}
         FROM blog_review
     '''
     if len(review_ids):
@@ -84,7 +84,7 @@ def get_reviews(review_ids=[], columns=['id', 'rating', 'review', 'date', 'recip
 def get_tags(tag_ids=[], columns=['id', 'name']):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
-        SELECT {columns_str}
+        SELECT id, {columns_str}
         FROM blog_tag
     '''
     if len(tag_ids):

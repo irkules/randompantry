@@ -1,131 +1,102 @@
 from django.core.cache import cache
 import numpy as np
-import pandas as pd
-from collections import defaultdict
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.decomposition import TruncatedSVD
-from surprise import Dataset, KNNBaseline, Reader, SVD
+from surprise import Dataset, KNNBaseline, Reader
 from blog import db
-from blog.models import Ingredient, Recipe, Review, Tag
+from blog.models import Recipe
 from blog.nearest_recipes import NearestRecipes
+from blog.recommender import RecipeRecommender
 
-def get_top_n(predictions, n):
-    top_n = defaultdict(list)
-    for uid, iid, _, est, _ in predictions:
-        top_n[uid].append((iid, est))
-    for uid, user_ratings in top_n.items():
-        user_ratings.sort(key=lambda x: x[1], reverse=True)
-        top_n[uid] = user_ratings[:n]
-    return top_n
+def get_home_context():
+    reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
+    recommended = get_recommended(reviews)
+    favourites = get_favourites()
+    make_again = get_make_again(reviews)
+    top_rated = get_top_rated(reviews)
+    return recommended, favourites, make_again, top_rated
 
-def get_recommended(user_id = 1):
-    reviews = db.get_reviews()
-    if len(reviews) == 0:
+def get_recommended(reviews):
+    if len(reviews) == 0 or (reviews.user_id != 1).all():
         return []
+    recommender = RecipeRecommender()
+    predictions_cache_key = 'svd_predictions'
+    if predictions_cache_key in cache:
+        predictions = cache.get(predictions_cache_key)
     else:
-        reviews = reviews[['user_id', 'recipe_id', 'rating']]
-    
-    if (reviews.user_id != user_id).all():
-        return []
-    else:
-        predictions_cache_key = 'svd_predictions'
-        if predictions_cache_key in cache:
-            predictions = cache.get(predictions_cache_key)
-        else:
-            data = Dataset.load_from_df(reviews, Reader(rating_scale=(1, 5)))
-            trainset = data.build_full_trainset()
-            testset = trainset.build_anti_testset()
-            model = SVD(random_state = 2020)
-            model.fit(trainset)
-            predictions = model.test(testset)
-            cache.set(predictions_cache_key, predictions)
-        # Get recommended recipes
-        top_n = get_top_n(predictions, n = 15)
-        rec_ids = np.array(top_n[user_id])[:, 0]
-        recs = db.get_recipes(recipe_ids=rec_ids, columns=['id', 'name', 'description', 'img_url'])
-        # Add average ratings
-        recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].fillna(0).values
-        # Convert to django context format
-        recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
-        return recs
+        recommender.fit(reviews)
+        predictions = recommender.predict()
+        cache.set(predictions_cache_key, predictions)
+    recommended_ids = recommender.get_recommended_ids(predictions, reviews)
+    recommended = recommender.get_recommended(recommended_ids)
+    return recommended
 
 def clear_recommended_cache():
     cache.delete('svd_predictions')
 
-def get_favourites(user_id = 1):
-    # TODO: Needs implentation
+# TODO: Implentation this!
+def get_favourites():
     return []
 
-def get_make_again(user_id = 1):
-    reviews = db.get_reviews()
+def get_make_again(reviews):
+    if len(reviews) == 0 or (reviews.user_id != 1).all():
+        return []
+    recipe_ids = reviews[reviews.user_id == 1].sort_values(by=['rating'], ascending=False)[:15].recipe_id.values
+    make_again = db.get_recipes(recipe_ids=recipe_ids, columns=['id', 'name', 'description', 'img_url'])
+    make_again['rating'] = reviews[reviews.recipe_id.isin(recipe_ids)].groupby('recipe_id').rating.mean()[recipe_ids].fillna(0).values
+    make_again = [{
+        'id': x[0], 
+        'name': x[1],
+        'desc': x[2],
+        'img_url': x[3],
+        'rating': range(int(np.round(x[4]))),
+        'rating_null': range(5 - int(np.round(x[4])))
+    } for x in make_again.values]
+    return make_again
+
+def get_top_rated(reviews):
     if len(reviews) == 0:
         return []
-    if (reviews.user_id != user_id).all():
-        return []
-    rec_ids = reviews[reviews.user_id == user_id].sort_values(by=['rating'], ascending=False)[:15].recipe_id.values
-    recs = db.get_recipes(recipe_ids=rec_ids, columns=['id', 'name', 'description', 'img_url'])
-    recs['rating'] = reviews[reviews.recipe_id.isin(rec_ids)].groupby('recipe_id').rating.mean()[rec_ids].fillna(0).values
-    recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
-    return recs
+    reviews = reviews.groupby('recipe_id')[['rating', 'recipe_id']].mean().reset_index(drop=True)
+    reviews['count'] = reviews.groupby('recipe_id').rating.count().values
+    reviews = reviews.sort_values(by=['rating', 'count'], ascending=[False, False])[:15]
+    recipe_ids = reviews.recipe_id.values
+    top_rated = db.get_recipes(recipe_ids=recipe_ids, columns=['id', 'name', 'description', 'img_url'])
+    top_rated['rating'] = reviews.rating.values
+    top_rated = [{
+        'id': x[0],
+        'name': x[1],
+        'desc': x[2],
+        'img_url': x[3],
+        'rating': range(int(np.round(x[4]))),
+        'rating_null': range(5 - int(np.round(x[4])))
+    } for x in top_rated.values]
+    return top_rated
 
-def get_top_rated():
+def get_recipe_detail_context(recipe_id):
+    recipes = db.get_recipes()
+    # TODO: recipe = recipes[recipes.id == recipe_id]
+    recipe = Recipe.objects.get(id=recipe_id)
     reviews = db.get_reviews()
-    if len(reviews) == 0:
-        return []
-    rev = reviews.groupby('recipe_id')[['rating', 'recipe_id']].mean().reset_index(drop=True)
-    rev['count'] = reviews.groupby('recipe_id').rating.count().values
-    rev = rev.sort_values(by=['rating', 'count'],ascending=[False, False])[:15]
-    rec_ids = rev.recipe_id.values
-    recs = db.get_recipes(recipe_ids=rec_ids, columns=['id', 'name', 'description', 'img_url'])
-    recs['rating'] = rev.rating.values
-    recs = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs.values]
-    return recs
-
-def get_top_tags():
-    recs = db.get_recipes()
-    if len(recs) == 0:
-        return [], [], []
-    recs_explode = recs.explode('tag_ids')
-    top_tag_ids = recs_explode.groupby('tag_ids')['id'].count().sort_values(ascending=False)[:3].index.values
-    recs_1 = recs_explode[recs_explode.tag_ids == top_tag_ids[0]].sample(n=15)[['id', 'name', 'description', 'img_url']]
-    recs_2 = recs_explode[recs_explode.tag_ids == top_tag_ids[1]].sample(n=15)[['id', 'name', 'description', 'img_url']]
-    recs_3 = recs_explode[recs_explode.tag_ids == top_tag_ids[2]].sample(n=15)[['id', 'name', 'description', 'img_url']]
-    reviews = db.get_reviews()
-    recs_1['rating'] = reviews[reviews.recipe_id.isin(recs_1.id)].groupby('recipe_id').rating.mean()[recs_1.id].fillna(0).values
-    recs_2['rating'] = reviews[reviews.recipe_id.isin(recs_2.id)].groupby('recipe_id').rating.mean()[recs_2.id].fillna(0).values
-    recs_3['rating'] = reviews[reviews.recipe_id.isin(recs_3.id)].groupby('recipe_id').rating.mean()[recs_3.id].fillna(0).values    
-    recs_1 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs_1.values]
-    recs_2 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs_2.values]
-    recs_3 = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in recs_3.values]
-    return recs_1, recs_2, recs_3
-
-def get_ingr(ingr_ids = None):
-    if ingr_ids is None:
-        querySet = Ingredient.objects.all()
+    current_recipe_review = reviews[reviews.recipe_id == recipe_id]
+    if len(current_recipe_review):
+        mean_rating = int(np.round(current_recipe_review.rating.mean()))
+        rating = range(mean_rating)
+        rating_null = range(5 - mean_rating)
     else:
-        querySet = Ingredient.objects.filter(pk__in=ingr_ids)
-    df = pd.DataFrame(list(querySet.values()))
-    df.index = df['id'].values
-    if ingr_ids is not None:
-        df = df.loc[ingr_ids].reset_index(drop = True)
-    return df.name.values
+        rating = []
+        rating_null = []
+    ingredients = db.get_ingredients(recipe.ingredient_ids).name
+    tags = db.get_tags(recipe.tag_ids).name
+    has_rated = len(reviews[np.logical_and(reviews.user_id == 1, reviews.recipe_id == recipe_id)]) != 0
+    similar_rating = get_similar_rating(recipe_id, reviews)
+    similar_ingredients = get_similar_ingredients(recipe_id, recipes)
+    similar_tags = get_similar_tags(recipe_id, recipes)
+    similar_nutrition = get_similar_nutrition(recipe_id, recipes)
+    return recipe, rating, rating_null, ingredients, tags, has_rated, similar_rating, similar_ingredients, similar_tags, similar_nutrition
 
-def get_tags(tag_ids = None):
-    if tag_ids is None:
-        querySet = Tag.objects.all()
-    else:
-        querySet = Tag.objects.filter(pk__in=tag_ids)
-    df = pd.DataFrame(list(querySet.values()))
-    df.index = df['id'].values
-    if tag_ids is not None:
-        df = df.loc[tag_ids].reset_index(drop=True)
-    return df.name.values
-
-def get_similar_rating(recipe_id):
-    reviews = db.get_reviews()
-    if len(reviews) == 0:
-        return []
-    if (reviews.recipe_id != recipe_id).all():
+def get_similar_rating(recipe_id, reviews):
+    if len(reviews) == 0 or (reviews.recipe_id != recipe_id).all():
         return []
     KNNBaseline_cache_key = 'KNNBaseline'
     if KNNBaseline_cache_key in cache:
@@ -142,11 +113,17 @@ def get_similar_rating(recipe_id):
     nearest_recipe_ids = [model.trainset.to_raw_iid(id) for id in nearest_recipe_inner_ids]
     nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
     nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-    nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
+    nearest_recipes = [{
+        'id': x[0],
+        'name': x[1],
+        'desc': x[2],
+        'img_url': x[3],
+        'rating': range(int(np.round(x[4]))),
+        'rating_null': range(5 - int(np.round(x[4])))
+    } for x in nearest_recipes.values]
     return nearest_recipes
 
-def get_similar_ingr(recipe_id):
-    recipes = db.get_recipes()
+def get_similar_ingredients(recipe_id, recipes):
     if len(recipes) == 0:
         return []
     NRIngr_cache_key = 'NRIngr'
@@ -165,15 +142,22 @@ def get_similar_ingr(recipe_id):
         cache.set(NRIngr_cache_key, model)
     nearest_recipe_ids = model.get_nearest_recipes(
         test = ingredients[recipes['id'] == recipe_id], 
-        train_id = recipes['id'].values)[0][-15:]
+        train_id = recipes['id'].values
+    )[0][-15:]
     nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
     reviews = db.get_reviews()
     nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-    nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
+    nearest_recipes = [{
+        'id': x[0],
+        'name': x[1],
+        'desc': x[2],
+        'img_url': x[3],
+        'rating': range(int(np.round(x[4]))),
+        'rating_null': range(5 - int(np.round(x[4])))
+    } for x in nearest_recipes.values]
     return nearest_recipes
 
-def get_similar_tags(recipe_id):
-    recipes = db.get_recipes()
+def get_similar_tags(recipe_id, recipes):
     if len(recipes) == 0:
         return []
     NRTags_cache_key = 'NRTags'
@@ -192,15 +176,22 @@ def get_similar_tags(recipe_id):
         cache.set(NRTags_cache_key, model)
     nearest_recipe_ids = model.get_nearest_recipes(
         test = tags[recipes['id'] == recipe_id], 
-        train_id = recipes['id'].values)[0][-15:]
+        train_id = recipes['id'].values
+    )[0][-15:]
     nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
     reviews = db.get_reviews()
     nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-    nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
+    nearest_recipes = [{
+        'id': x[0],
+        'name': x[1],
+        'desc': x[2],
+        'img_url': x[3],
+        'rating': range(int(np.round(x[4]))),
+        'rating_null': range(5 - int(np.round(x[4])))
+    } for x in nearest_recipes.values]
     return nearest_recipes
 
-def get_similar_nutr(recipe_id):
-    recipes = db.get_recipes()
+def get_similar_nutrition(recipe_id, recipes):
     if len(recipes) == 0:
         return []
     NRNutr_cache_key = 'NRNutr'
@@ -217,7 +208,14 @@ def get_similar_nutr(recipe_id):
     nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
     reviews = db.get_reviews()
     nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-    nearest_recipes = [{'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3], 'rating': range(int(np.round(x[4]))), 'rating_null': range(5 - int(np.round(x[4])))} for x in nearest_recipes.values]
+    nearest_recipes = [{
+        'id': x[0],
+        'name': x[1],
+        'desc': x[2],
+        'img_url': x[3],
+        'rating': range(int(np.round(x[4]))),
+        'rating_null': range(5 - int(np.round(x[4])))
+    } for x in nearest_recipes.values]
     return nearest_recipes
 
 def clear_similar_recipes_cache():

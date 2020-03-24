@@ -2,27 +2,21 @@ from django.core.cache import cache
 from django.shortcuts import render
 import numpy as np
 import pandas as pd
-from .models import Recipe, Review
-from .forms import UserReviewForm
-from . import content
+from blog.models import Recipe, Review
+from blog.forms import UserReviewForm
+from blog import content
 
 def home(request):
-    top_tags = content.get_top_tags()
+    home_context = content.get_home_context()
     context = {
-        'title': 'RANDOM PANTRY!',
-        'recommendations': content.get_recommended(),
-        'favourites': content.get_favourites(),
-        'make_again': content.get_make_again(),
-        'top_rated': content.get_top_rated(),
-        'top_tag_1': top_tags[0],
-        'top_tag_2': top_tags[1],
-        'top_tag_3': top_tags[2]
-
+        'title': 'Random Pantry!',
+        'recommendations': home_context[0],
+        'favourites': home_context[1],
+        'make_again': home_context[2],
+        'top_rated': home_context[3]
     }
     return render(request, 'blog/home.html', context)
 
-# TODO: This needs improvement
-# TODO: Add to favourites
 def recipe_detail_view(request, pk):
     # Review Form
     if request.method == 'POST':
@@ -34,37 +28,26 @@ def recipe_detail_view(request, pk):
                 recipe_id=pk,
                 user_id=1
             )
-            # Remove outdated cached data
             content.clear_recommended_cache()
             content.clear_similar_recipes_cache()
     else:
         form = UserReviewForm()
-    
-    # Recipe-detail content
-    recipe = Recipe.objects.get(pk=pk)
-    reviews = pd.DataFrame(list(Review.objects.all().values()))
-    if len(reviews[reviews.recipe_id == pk]) == 0:
-        rating = []
-        rating_null = []
-    else:
-        val = int(np.round(pd.DataFrame(list(Review.objects.all().filter(recipe_id=pk).values())).rating.mean()))
-        rating = range(val)
-        rating_null = range(5 - val)
 
+    recipe_detail_context = content.get_recipe_detail_context(pk)
     context = {
-        'title': 'RANDOM PANTRY! - Recipe',
-        'recipe': recipe,
+        'title': 'Random Pantry! - Recipe',
+        'recipe': recipe_detail_context[0],
         'author': 'Food.com',
-        'rating': rating,
-        'rating_null': rating_null,
-        'ingredients': content.get_ingr(recipe.ingredient_ids),
-        'tags': content.get_tags(recipe.tag_ids),
+        'rating': recipe_detail_context[1],
+        'rating_null': recipe_detail_context[2],
+        'ingredients': recipe_detail_context[3],
+        'tags': recipe_detail_context[4],
         'form': form,
-        'has_rated': len(reviews[np.logical_and(reviews.user_id == 1, reviews.recipe_id == pk)]) != 0,
-        'similar_rating': content.get_similar_rating(pk),
-        'similar_ingr': content.get_similar_ingr(pk),
-        'similar_tags': content.get_similar_tags(pk),
-        'similar_nutr': content.get_similar_nutr(pk)
+        'has_rated': recipe_detail_context[5],
+        'similar_rating': recipe_detail_context[6],
+        'similar_ingr': recipe_detail_context[7],
+        'similar_tags': recipe_detail_context[8],
+        'similar_nutr': recipe_detail_context[9]
     }
     return render(request, 'blog/recipe_detail.html', context)
 

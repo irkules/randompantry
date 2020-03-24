@@ -1,7 +1,6 @@
-from surprise import Dataset, KNNBaseline, Reader, SVDpp
-from .models import Recipe, Review
+from surprise import Dataset, KNNBaseline, Reader, SVD, SVDpp
 from collections import defaultdict
-from . import db
+from blog import db
 import numpy as np
 
 class RecipeRecommender:
@@ -14,34 +13,34 @@ class RecipeRecommender:
             lr_bu=None, lr_bi=None, lr_pu=None, lr_qi=None, lr_yj=None,
             reg_bu=None, reg_bi=None, reg_pu=None, reg_qi=None, reg_yj=None
         ):
-        self.model = SVDpp(
+        # self.model = SVDpp(
+        #     n_factors=n_factors, 
+        #     n_epochs=n_epochs,
+        #     lr_all=lr_all,
+        #     reg_all=reg_all,
+        #     lr_bu=lr_bu, lr_bi=lr_bi, lr_pu=lr_pu, lr_qi=lr_qi, lr_yj=lr_yj,
+        #     reg_bu=reg_bu, reg_bi=reg_bi, reg_pu=reg_pu, reg_qi=reg_qi, reg_yj=reg_yj
+        # )
+        self.model = SVD(
             n_factors=n_factors, 
-            n_epochs=n_epochs,
-            lr_all=lr_all,
-            reg_all=reg_all,
-            lr_bu=lr_bu, lr_bi=lr_bi, lr_pu=lr_pu, lr_qi=lr_qi, lr_yj=lr_yj,
-            reg_bu=reg_bu, reg_bi=reg_bi, reg_pu=reg_pu, reg_qi=reg_qi, reg_yj=reg_yj
+            n_epochs=n_epochs
         )
 
     def fit(self, data_frame):
         reader = Reader(rating_scale=(1, 5))
         data = Dataset.load_from_df(data_frame, reader)
         self.trainset = data.build_full_trainset()
-        self.testset = trainset.build_anti_testset()
-        return self.model.fit(trainset)
+        self.testset = self.trainset.build_anti_testset()
+        return self.model.fit(self.trainset)
 
-    def predict(self, testset):
-        return self.model.test(testset)
+    def predict(self):
+        return self.model.test(self.testset)
 
-    def get_recommended_ids(self, reviews_data_frame):
-        reviews = reviews_data_frame[['user_id', 'recipe_id', 'rating']]
-        user_id = 1
-        has_rated = (reviews.user_id == user_id).any()
+    def get_recommended_ids(self, predictions, data_frame):
+        has_rated = (data_frame.user_id == 1).any()
         if has_rated:
-            self.fit(reviews_data_frame)
-            predictions = self.predict(self.testset)
             top_n = self.get_top_n(predictions)
-            recommended_ids = np.array(top_n[user_id])[:, 0]
+            recommended_ids = np.array(top_n[1], dtype='uint')[:, 0]
             return recommended_ids
         else:
             return []
@@ -56,7 +55,11 @@ class RecipeRecommender:
         return top_n
 
     def get_recommended(self, recommended_ids):
-        recommended_recipes_data_frame = db.get_recipes(rec_ids=recommended_ids)
-        recommended = recommended_recipes_data_frame[['id', 'name', 'description', 'img_url']]
-        recommended = [{ 'id': x[0], 'name': x[1], 'desc': x[2], 'img_url': x[3] } for x in recommended.values]
+        recommended_data_frame = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url'])
+        recommended = [{
+            'id': x[0],
+            'name': x[1],
+            'desc': x[2],
+            'img_url': x[3]
+        } for x in recommended_data_frame.values]
         return recommended
