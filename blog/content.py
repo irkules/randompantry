@@ -5,8 +5,9 @@ from sklearn.decomposition import TruncatedSVD
 from surprise import Dataset, KNNBaseline, Reader
 from blog import db, redis
 from blog.models import Recipe
-from blog.nearest_recipes import NearestRecipes
+from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
 from blog.recommender import RecipeRecommender
+
 
 class HomeContent:    
     @staticmethod
@@ -31,7 +32,7 @@ class HomeContent:
             if 'recommended' in db_cache:
                 recommended_ids = db_cache['recommended']
                 # If cache was previously purged
-                if recommended_ids == [-1]:
+                if recommended_ids == [-1] or recommended_ids is None:
                     recommended_ids = HomeContent.get_recommended_ids(reviews)
                     # Update db cache
                     db.update_home_cache(columns=['recommended'], values=[recommended_ids])
@@ -102,10 +103,37 @@ class HomeContent:
 class RecipeDetailContent:
     @staticmethod
     def get_recipe_detail_context(recipe_id):
-        recipes = db.get_recipes()
         # TODO: recipe = recipes[recipes.id == recipe_id]
-        recipe = Recipe.objects.get(id=recipe_id)
-        reviews = db.get_reviews()
+        current_recipe = Recipe.objects.get(id=recipe_id)
+        recipes = db.get_recipes()
+        reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
+        rating, rating_null = RecipeDetailContent.get_recipe_rating(recipe_id, reviews)
+        ingredients = db.get_ingredients(current_recipe.ingredient_ids).name
+        tags = db.get_tags(current_recipe.tag_ids).name
+        has_rated = len(reviews[np.logical_and(reviews.user_id == 1, reviews.recipe_id == recipe_id)]) != 0
+        
+        # TODO: Implement cache
+        has_db_cache = True
+        has_backend_cache = True
+        similar_columns = ['similar_rating', 'similar_ingredients', 'similar_tags', 'similar_nutrition']
+        for column in similar_columns:
+            similar_recipe_ids = getattr(current_recipe, column)
+            if similar_recipe_ids == [-1] or similar_recipe_ids is None:
+                has_db_cache = False
+                break
+            if f'redis_{column}' not in cache:
+                has_backend_cache = False
+                break
+        
+        similar_rating = RecipeDetailContent.get_similar_rating(recipe_id, reviews)
+        similar_ingredients = RecipeDetailContent.get_similar_ingredients(recipe_id, recipes, reviews)
+        similar_tags = RecipeDetailContent.get_similar_tags(recipe_id, recipes, reviews)
+        similar_nutrition = RecipeDetailContent.get_similar_nutrition(recipe_id, recipes, reviews)
+
+        return current_recipe, rating, rating_null, ingredients, tags, has_rated, similar_rating, similar_ingredients, similar_tags, similar_nutrition
+
+    @staticmethod
+    def get_recipe_rating(recipe_id, reviews):
         current_recipe_review = reviews[reviews.recipe_id == recipe_id]
         if len(current_recipe_review):
             mean_rating = int(np.round(current_recipe_review.rating.mean()))
@@ -114,32 +142,15 @@ class RecipeDetailContent:
         else:
             rating = []
             rating_null = []
-        ingredients = db.get_ingredients(recipe.ingredient_ids).name
-        tags = db.get_tags(recipe.tag_ids).name
-        has_rated = len(reviews[np.logical_and(reviews.user_id == 1, reviews.recipe_id == recipe_id)]) != 0
-        similar_rating = RecipeDetailContent.get_similar_rating(recipe_id, reviews)
-        similar_ingredients = RecipeDetailContent.get_similar_ingredients(recipe_id, recipes)
-        similar_tags = RecipeDetailContent.get_similar_tags(recipe_id, recipes)
-        similar_nutrition = RecipeDetailContent.get_similar_nutrition(recipe_id, recipes)
-        return recipe, rating, rating_null, ingredients, tags, has_rated, similar_rating, similar_ingredients, similar_tags, similar_nutrition
-    
+        return rating, rating_null
+
     @staticmethod
     def get_similar_rating(recipe_id, reviews):
         if len(reviews) == 0 or (reviews.recipe_id != recipe_id).all():
             return []
-        KNNBaseline_cache_key = 'KNNBaseline'
-        if KNNBaseline_cache_key in cache:
-            model = cache.get(KNNBaseline_cache_key)
-        else:
-            reviews = reviews[['user_id', 'recipe_id', 'rating']]
-            data = Dataset.load_from_df(reviews, Reader(rating_scale=(1, 5)))
-            trainset = data.build_full_trainset()
-            model = KNNBaseline(sim_options={'name': 'pearson_baseline', 'user_based': False}, verbose=False)
-            model.fit(trainset)
-            cache.set(KNNBaseline_cache_key, model)
-        inner_id = model.trainset.to_inner_iid(recipe_id)
-        nearest_recipe_inner_ids = model.get_neighbors(inner_id, k=15)
-        nearest_recipe_ids = [model.trainset.to_raw_iid(id) for id in nearest_recipe_inner_ids]
+        model = NearestRecipesBaseline(k=40)
+        model.fit(reviews)
+        nearest_recipe_ids = model.predict(recipe_id)
         nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
         nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
         nearest_recipes = [{
@@ -153,31 +164,15 @@ class RecipeDetailContent:
         return nearest_recipes
 
     @staticmethod
-    def get_similar_ingredients(recipe_id, recipes):
+    def get_similar_ingredients(recipe_id, recipes, reviews):
         if len(recipes) == 0:
             return []
-        NRIngr_cache_key = 'NRIngr'
-        ingr_cache_key = 'ingr'
-        if (NRIngr_cache_key in cache) and (ingr_cache_key in cache):
-            model = cache.get(NRIngr_cache_key)
-            ingredients = cache.get(ingr_cache_key)
-        else:
-            mlb = MultiLabelBinarizer(sparse_output = True)
-            ingredients = mlb.fit_transform(recipes.ingredient_ids)
-            tsvd = TruncatedSVD(n_components = 100, random_state = 2019)
-            ingredients = tsvd.fit_transform(ingredients)
-            cache.set(ingr_cache_key, ingredients)
-            model = NearestRecipes(k = 16)
-            model.fit(ingredients)
-            cache.set(NRIngr_cache_key, model)
-        nearest_recipe_ids = model.get_nearest_recipes(
-            test = ingredients[recipes['id'] == recipe_id], 
-            train_id = recipes['id'].values
-        )[0][-15:]
+        model = NearestRecipes()
+        model.fit(recipes.ingredient_ids)
+        nearest_recipe_ids = model.predict(recipe_id, recipes.id)
         nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
-        reviews = db.get_reviews()
         nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-        nearest_recipes = [{
+        return [{
             'id': x[0],
             'name': x[1],
             'desc': x[2],
@@ -185,34 +180,17 @@ class RecipeDetailContent:
             'rating': range(int(np.round(x[4]))),
             'rating_null': range(5 - int(np.round(x[4])))
         } for x in nearest_recipes.values]
-        return nearest_recipes
 
     @staticmethod
-    def get_similar_tags(recipe_id, recipes):
+    def get_similar_tags(recipe_id, recipes, reviews):
         if len(recipes) == 0:
             return []
-        NRTags_cache_key = 'NRTags'
-        tags_cache_key = 'tags'
-        if (NRTags_cache_key in cache) and (tags_cache_key in cache):
-            model = cache.get(NRTags_cache_key)
-            tags = cache.get(tags_cache_key)
-        else:
-            mlb = MultiLabelBinarizer(sparse_output = True)
-            tags = mlb.fit_transform(recipes.tag_ids)
-            tsvd = TruncatedSVD(n_components = 100, random_state = 2019)
-            tags = tsvd.fit_transform(tags)
-            cache.set(tags_cache_key, tags)
-            model = NearestRecipes(k = 16)
-            model.fit(tags)
-            cache.set(NRTags_cache_key, model)
-        nearest_recipe_ids = model.get_nearest_recipes(
-            test = tags[recipes['id'] == recipe_id], 
-            train_id = recipes['id'].values
-        )[0][-15:]
+        model = NearestRecipes()
+        model.fit(recipes.tag_ids)
+        nearest_recipe_ids = model.predict(recipe_id, recipes.id)
         nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
-        reviews = db.get_reviews()
         nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-        nearest_recipes = [{
+        return [{
             'id': x[0],
             'name': x[1],
             'desc': x[2],
@@ -220,27 +198,17 @@ class RecipeDetailContent:
             'rating': range(int(np.round(x[4]))),
             'rating_null': range(5 - int(np.round(x[4])))
         } for x in nearest_recipes.values]
-        return nearest_recipes
 
     @staticmethod
-    def get_similar_nutrition(recipe_id, recipes):
+    def get_similar_nutrition(recipe_id, recipes, reviews):
         if len(recipes) == 0:
             return []
-        NRNutr_cache_key = 'NRNutr'
-        if NRNutr_cache_key in cache:
-            model = cache.get(NRNutr_cache_key)
-        else:
-            nutrition = recipes.nutrition.values.tolist()
-            model = NearestRecipes(k = 16)
-            model.fit(nutrition)
-            cache.set(NRNutr_cache_key, model)
-        nearest_recipe_ids = model.get_nearest_recipes(
-            test = recipes.nutrition[recipes['id'] == recipe_id].tolist(), 
-            train_id = recipes['id'].values)[0][-15:]
+        model = NearestRecipes(reduce=False)
+        model.fit(recipes.nutrition)
+        nearest_recipe_ids = model.predict(recipe_id, recipes.id)
         nearest_recipes = db.get_recipes(recipe_ids=nearest_recipe_ids, columns=['id', 'name', 'description', 'img_url'])
-        reviews = db.get_reviews()
         nearest_recipes['rating'] = reviews[reviews.recipe_id.isin(nearest_recipe_ids)].groupby('recipe_id').rating.mean()[nearest_recipe_ids].fillna(0).values
-        nearest_recipes = [{
+        return [{
             'id': x[0],
             'name': x[1],
             'desc': x[2],
@@ -248,13 +216,8 @@ class RecipeDetailContent:
             'rating': range(int(np.round(x[4]))),
             'rating_null': range(5 - int(np.round(x[4])))
         } for x in nearest_recipes.values]
-        return nearest_recipes
 
+    # TODO: Implement this!
     @staticmethod
-    def clear_similar_recipes_cache():
-        cache.delete('KNNBaseline')
-        cache.delete('NRIngr')
-        cache.delete('ingr')
-        cache.delete('NRTags')
-        cache.delete('tags')
-        cache.delete('NRNutr')
+    def purge_similar_cache():
+        return None

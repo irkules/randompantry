@@ -2,7 +2,17 @@ from blog.models import Home, Ingredient, Recipe, Review, Tag
 from django.db import connection
 from pandas import DataFrame
 
-def get_home_cache(columns=['recommended', 'favourites', 'make_again', 'top_rated']):
+
+'''DATABASE COLUMN NAMES'''
+HOME_COLUMNS = [x.name for x in Home._meta.get_fields()]
+INGREDIENT_COLUMNS = [x.name for x in Ingredient._meta.get_fields()]
+RECIPE_COLUMNS = [x.name for x in Recipe._meta.get_fields()]
+REVIEW_COLUMNS = [x.name for x in Review._meta.get_fields()]
+TAG_COLUMNS = [x.name for x in Tag._meta.get_fields()]
+
+
+'''REGION HOME'''
+def get_home_cache(columns=HOME_COLUMNS):
     """
     Retrieve cache info from blog_home table.
 
@@ -71,8 +81,43 @@ def update_home_cache(columns, values):
         return True
     except:
         return False
+'''ENDREGION HOME'''
 
-def get_ingredients(ingredient_ids=[], columns=['id', 'name']):
+
+'''REGION RECIPE DETAIL'''
+def update_recipe_cache(recipe_id, columns, values):
+    """
+    Update similar recipe ids in blog_recipe table.
+    Update similar recipe ids if cache exists.
+
+    Keyword arguments:
+    recipe_id: int -- the id of recipe to be updated
+    columns: str[] -- the list of columns to be updated (same length as values)
+    values: int[][] -- the list of values to be updated (same length as columns)
+
+    Return True if update is successful
+    Return False if update failed
+    """
+    # Generate Subquery
+    subquery_set_list = [f'{columns[i]} = ARRAY{values[i]}::integer[]' for i in range(len(columns))]
+    subquery_set = (', ').join(subquery_set_list)
+    # Perform Query
+    query = f'''
+        UPDATE blog_recipe
+        SET {subquery_set}
+        WHERE id = {recipe_id};
+        '''
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+        return True
+    except:
+        return False
+'''ENDREGION RECIPE DETAIL'''
+
+
+'''REGION SHARED'''
+def get_ingredients(ingredient_ids=[], columns=INGREDIENT_COLUMNS):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
         SELECT id, {columns_str}
@@ -92,13 +137,7 @@ def get_ingredients(ingredient_ids=[], columns=['id', 'name']):
     ingredients_data_frame = DataFrame(data)
     return ingredients_data_frame
 
-def get_recipes(
-    recipe_ids=[], 
-    columns=[
-        'id', 'name', 'description', 'ingredient_ids', 'tag_ids', 'nutrition',
-        'calorie_level', 'minutes', 'steps', 'img_url', 'date', 'user_id',
-        'similar_rating', 'similar_ingredients', 'similar_tags', 'similar_nutrition'
-    ]):
+def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
         SELECT id, {columns_str}
@@ -118,7 +157,7 @@ def get_recipes(
     recipes_data_frame = DataFrame(data)       
     return recipes_data_frame
 
-def get_reviews(review_ids=[], columns=['id', 'rating', 'review', 'date', 'recipe_id', 'user_id']):
+def get_reviews(review_ids=[], columns=REVIEW_COLUMNS):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
         SELECT id, {columns_str}
@@ -138,7 +177,7 @@ def get_reviews(review_ids=[], columns=['id', 'rating', 'review', 'date', 'recip
     reviews_data_frame = DataFrame(data)
     return reviews_data_frame
 
-def get_tags(tag_ids=[], columns=['id', 'name']):
+def get_tags(tag_ids=[], columns=TAG_COLUMNS):
     columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
         SELECT id, {columns_str}
@@ -157,3 +196,4 @@ def get_tags(tag_ids=[], columns=['id', 'name']):
             data[column].append(getattr(rawQuery, column))
     tags_data_frame = DataFrame(data)        
     return tags_data_frame
+'''ENDREGION SHARED'''

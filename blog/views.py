@@ -5,6 +5,7 @@ from blog.models import Recipe, Review
 from blog.forms import UserReviewForm
 from blog.content import HomeContent, RecipeDetailContent
 
+
 def home(request):
     home_context = HomeContent.get_home_context()
     context = {
@@ -17,7 +18,6 @@ def home(request):
     return render(request, 'blog/home.html', context)
 
 def recipe_detail_view(request, pk):
-    # Review Form
     if request.method == 'POST':
         form = UserReviewForm(request.POST)
         if form.is_valid():
@@ -28,10 +28,9 @@ def recipe_detail_view(request, pk):
                 user_id=1
             )
             HomeContent.purge_recommended_cache()
-            RecipeDetailContent.clear_similar_recipes_cache()
+            RecipeDetailContent.purge_similar_cache()
     else:
         form = UserReviewForm()
-
     recipe_detail_context = RecipeDetailContent.get_recipe_detail_context(pk)
     context = {
         'title': 'Random Pantry! - Recipe',

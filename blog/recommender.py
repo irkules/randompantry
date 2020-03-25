@@ -1,7 +1,8 @@
-from surprise import Dataset, KNNBaseline, Reader, SVD, SVDpp
+from surprise import Dataset, Reader, SVD, SVDpp
 from collections import defaultdict
 from blog import db
 import numpy as np
+
 
 class RecipeRecommender:
     def __init__(
@@ -19,23 +20,25 @@ class RecipeRecommender:
         #     lr_all=lr_all,
         #     reg_all=reg_all,
         #     lr_bu=lr_bu, lr_bi=lr_bi, lr_pu=lr_pu, lr_qi=lr_qi, lr_yj=lr_yj,
-        #     reg_bu=reg_bu, reg_bi=reg_bi, reg_pu=reg_pu, reg_qi=reg_qi, reg_yj=reg_yj
+        #     reg_bu=reg_bu, reg_bi=reg_bi, reg_pu=reg_pu, reg_qi=reg_qi, reg_yj=reg_yj,
+        #     random_state=2020
         # )
         self.model = SVD(
             n_factors=n_factors, 
-            n_epochs=n_epochs
+            n_epochs=n_epochs,
+            random_state=2020
         )
 
-    def fit(self, data_frame):
+    def fit(self, reviews):
         reader = Reader(rating_scale=(1, 5))
-        data = Dataset.load_from_df(data_frame, reader)
+        data = Dataset.load_from_df(reviews, reader)
         self.trainset = data.build_full_trainset()
         self.testset = self.trainset.build_anti_testset()
         return self.model.fit(self.trainset)
 
-    def predict(self, data_frame):
+    def predict(self, reviews):
         self.predictions = self.model.test(self.testset)
-        has_rated = (data_frame.user_id == 1).any()
+        has_rated = (reviews.user_id == 1).any()
         if has_rated:
             top_n_recipes_ids = RecipeRecommender.get_top_n(self.predictions)
             recommended_recipe_ids = np.array(top_n_recipes_ids[1], dtype='uint')[:, 0]
@@ -58,16 +61,15 @@ class RecipeRecommender:
     @staticmethod
     def get_recommended(recommended_ids, reviews):
         if len(recommended_ids):
-            data_frame = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url'])
-            data_frame['rating'] = reviews[reviews.recipe_id.isin(recommended_ids)].groupby('recipe_id').rating.mean()[recommended_ids].fillna(0).values
-            recommended_recipes = [{
+            recipes = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url'])
+            recipes['rating'] = reviews[reviews.recipe_id.isin(recommended_ids)].groupby('recipe_id').rating.mean()[recommended_ids].fillna(0).values
+            return [{
                 'id': x[0],
                 'name': x[1],
                 'desc': x[2],
                 'img_url': x[3],
                 'rating': range(int(np.round(x[4]))),
                 'rating_null': range(5 - int(np.round(x[4])))
-            } for x in data_frame.values]
-            return recommended_recipes
+            } for x in recipes.values]
         else:
             return []
