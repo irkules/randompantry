@@ -1,13 +1,12 @@
-from django.core.cache import cache
 from django.shortcuts import render
 import numpy as np
 import pandas as pd
 from blog.models import Recipe, Review
 from blog.forms import UserReviewForm
-from blog import content
+from blog.content import HomeContent, RecipeDetailContent
 
 def home(request):
-    home_context = content.get_home_context()
+    home_context = HomeContent.get_home_context()
     context = {
         'title': 'Random Pantry!',
         'recommendations': home_context[0],
@@ -28,12 +27,12 @@ def recipe_detail_view(request, pk):
                 recipe_id=pk,
                 user_id=1
             )
-            content.clear_recommended_cache()
-            content.clear_similar_recipes_cache()
+            HomeContent.purge_recommended_cache()
+            RecipeDetailContent.clear_similar_recipes_cache()
     else:
         form = UserReviewForm()
 
-    recipe_detail_context = content.get_recipe_detail_context(pk)
+    recipe_detail_context = RecipeDetailContent.get_recipe_detail_context(pk)
     context = {
         'title': 'Random Pantry! - Recipe',
         'recipe': recipe_detail_context[0],

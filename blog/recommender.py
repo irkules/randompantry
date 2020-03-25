@@ -33,19 +33,20 @@ class RecipeRecommender:
         self.testset = self.trainset.build_anti_testset()
         return self.model.fit(self.trainset)
 
-    def predict(self):
-        return self.model.test(self.testset)
-
-    def get_recommended_ids(self, predictions, data_frame):
+    def predict(self, data_frame):
+        self.predictions = self.model.test(self.testset)
         has_rated = (data_frame.user_id == 1).any()
         if has_rated:
-            top_n = self.get_top_n(predictions)
-            recommended_ids = np.array(top_n[1], dtype='uint')[:, 0]
-            return recommended_ids
+            top_n_recipes_ids = RecipeRecommender.get_top_n(self.predictions)
+            recommended_recipe_ids = np.array(top_n_recipes_ids[1], dtype='uint')[:, 0]
+            # Cache predictions in database
+            db.update_home_cache(['recommended'], [list(recommended_recipe_ids)])
+            return recommended_recipe_ids
         else:
             return []
 
-    def get_top_n(self, predictions, n = 15):
+    @staticmethod
+    def get_top_n(predictions, n=20):
         top_n = defaultdict(list)
         for uid, iid, _, est, _ in predictions:
             top_n[uid].append((iid, est))
@@ -54,12 +55,19 @@ class RecipeRecommender:
             top_n[uid] = user_ratings[:n]
         return top_n
 
-    def get_recommended(self, recommended_ids):
-        recommended_data_frame = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url'])
-        recommended = [{
-            'id': x[0],
-            'name': x[1],
-            'desc': x[2],
-            'img_url': x[3]
-        } for x in recommended_data_frame.values]
-        return recommended
+    @staticmethod
+    def get_recommended(recommended_ids, reviews):
+        if len(recommended_ids):
+            data_frame = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url'])
+            data_frame['rating'] = reviews[reviews.recipe_id.isin(recommended_ids)].groupby('recipe_id').rating.mean()[recommended_ids].fillna(0).values
+            recommended_recipes = [{
+                'id': x[0],
+                'name': x[1],
+                'desc': x[2],
+                'img_url': x[3],
+                'rating': range(int(np.round(x[4]))),
+                'rating_null': range(5 - int(np.round(x[4])))
+            } for x in data_frame.values]
+            return recommended_recipes
+        else:
+            return []
