@@ -3,6 +3,10 @@ from django.db import connection
 from pandas import DataFrame
 
 
+'''CONSTANTS'''
+SEPERATOR = ', '
+
+
 '''DATABASE COLUMN NAMES'''
 HOME_COLUMNS = [x.name for x in Home._meta.get_fields()]
 INGREDIENT_COLUMNS = [x.name for x in Ingredient._meta.get_fields()]
@@ -21,7 +25,7 @@ def get_home_cache(columns=HOME_COLUMNS):
     """
     # Perform Query
     query = f'''
-        SELECT {(', ').join(columns)}
+        SELECT {SEPERATOR.join(columns)}
         FROM blog_home
         WHERE id = 1;
         '''
@@ -49,7 +53,7 @@ def update_home_cache(columns, values):
     """
     # Generate Subquery for UPDATE Query
     subquery_set_list = [f'{columns[i]} = ARRAY{values[i]}::integer[]' for i in range(len(columns))]
-    subquery_set = (', ').join(subquery_set_list)
+    subquery_set = SEPERATOR.join(subquery_set_list)
     # Generate Subquery for INSERT Query
     h_columns = ['recommended', 'favourites', 'make_again', 'top_rated']
     invalid_columns = [col for col in columns if col not in h_columns]
@@ -59,8 +63,8 @@ def update_home_cache(columns, values):
         del values[index]
     default_columns = [col for col in h_columns if col not in columns]
     for col in default_columns:
-        values.insert(h_columns.index(col), [])
-    subquery_values = (', ').join([f'ARRAY{value}::integer[]' for value in values])
+        values.insert(h_columns.index(col), [-1])
+    subquery_values = SEPERATOR.join([f'ARRAY{value}::integer[]' for value in values])
     # Perform Query
     query = f'''
         DO $$
@@ -100,7 +104,7 @@ def update_recipe_cache(recipe_id, columns, values):
     """
     # Generate Subquery
     subquery_set_list = [f'{columns[i]} = ARRAY{values[i]}::integer[]' for i in range(len(columns))]
-    subquery_set = (', ').join(subquery_set_list)
+    subquery_set = SEPERATOR.join(subquery_set_list)
     # Perform Query
     query = f'''
         UPDATE blog_recipe
@@ -138,24 +142,34 @@ def get_ingredients(ingredient_ids=[], columns=INGREDIENT_COLUMNS):
     return ingredients_data_frame
 
 def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
-    columns_str = str(list(columns))[1:-1].replace("'", "")
     query = f'''
-        SELECT id, {columns_str}
-        FROM blog_recipe
+        SELECT {SEPERATOR.join(columns)}
+        FROM (
+            SELECT * FROM blog_recipe
+        ) as recipe_table
+        LEFT JOIN
+        (
+            SELECT recipe_id, AVG(rating) as rating
+            FROM blog_recipe, blog_review 
+            WHERE blog_recipe.id = blog_review.recipe_id
+            GROUP BY recipe_id
+        ) as review_table
+        ON review_table.recipe_id = recipe_table.id
         '''
     if len(recipe_ids):
-        recipe_ids_str = str(list(recipe_ids))[1:-1]
+        recipe_ids_str = SEPERATOR.join(str(id) for id in recipe_ids)
         query += f'''
             WHERE id IN ({recipe_ids_str})
             ORDER BY array_position(ARRAY[{recipe_ids_str}]::integer[], id)
             '''
-    data = { column: [] for column in columns }
-    rawQuerySet = Recipe.objects.raw(query)
-    for rawQuery in rawQuerySet:
-        for column in columns:
-            data[column].append(getattr(rawQuery, column))
-    recipes_data_frame = DataFrame(data)       
-    return recipes_data_frame
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns = [col[0] for col in cursor.description]
+            recipes_dict = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        return DataFrame(recipes_dict)
+    except:
+        return DataFrame()
 
 def get_reviews(review_ids=[], columns=REVIEW_COLUMNS):
     columns_str = str(list(columns))[1:-1].replace("'", "")

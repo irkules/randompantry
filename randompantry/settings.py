@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 from os import environ, path
+from celery import Celery
 from django_heroku import settings
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = path.dirname(path.dirname(path.abspath(__file__)))
@@ -132,14 +134,20 @@ MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 
+REDIS_URL = environ.get('REDIS_URL')
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+        'BACKEND': 'redis_cache.RedisCache',
+        'LOCATION': REDIS_URL
     }
 }
 
-REDIS_URL = environ.get('REDIS_URL')
-if REDIS_URL:
-    default = CACHES['default']
-    default['BACKEND'] = 'redis_cache.RedisCache'
-    default['LOCATION'] = REDIS_URL
+
+# Celery
+# https://drdaeman.github.io/heroku-djcelery-example/
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_BROKER_TRANSPORT_OPTIONS = { 'max_connections': 2 }
+CELERY_BROKER_POOL_LIMIT = None
+CELERY_CACHE_BACKEND = REDIS_URL
+CELERY_TIMEZONE = TIME_ZONE

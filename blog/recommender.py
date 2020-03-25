@@ -58,18 +58,3 @@ class RecipeRecommender:
             top_n[uid] = user_ratings[:n]
         return top_n
 
-    @staticmethod
-    def get_recommended(recommended_ids, reviews):
-        if len(recommended_ids):
-            recipes = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url'])
-            recipes['rating'] = reviews[reviews.recipe_id.isin(recommended_ids)].groupby('recipe_id').rating.mean()[recommended_ids].fillna(0).values
-            return [{
-                'id': x[0],
-                'name': x[1],
-                'desc': x[2],
-                'img_url': x[3],
-                'rating': range(int(np.round(x[4]))),
-                'rating_null': range(5 - int(np.round(x[4])))
-            } for x in recipes.values]
-        else:
-            return []

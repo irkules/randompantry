@@ -27,7 +27,7 @@ def recipe_detail_view(request, pk):
                 recipe_id=pk,
                 user_id=1
             )
-            HomeContent.purge_recommended_cache()
+            HomeContent.purge_home_cache()
             RecipeDetailContent.purge_similar_cache()
     else:
         form = UserReviewForm()
