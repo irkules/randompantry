@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.decomposition import TruncatedSVD
 from surprise import Dataset, KNNBaseline, Reader
-from blog import db, redis
+from blog import db, redis, tasks
 from blog.models import Recipe
 from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
 from blog.recommender import RecipeRecommender
@@ -67,7 +67,7 @@ class HomeContent:
         cache.delete(redis.RECOMMENDED_KEY)
         cache.delete(redis.MAKE_AGAIN_KEY)
         cache.delete(redis.TOP_RATED_KEY)
-        db.update_home_cache(columns=['recommended', 'make_again', 'top_rated'], values=[[-1], [-1], [-1]])
+        tasks.update_home_cache.delay(columns=['recommended', 'make_again', 'top_rated'], values=[[-1], [-1], [-1]])
 
     # TODO: Implentation this!
     @staticmethod

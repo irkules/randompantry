@@ -52,11 +52,11 @@ logger = get_task_logger(__name__)
 #         )
 #     return None
 
-# @shared_task
-# def update_home_cache(columns, values):
-#     status = db.update_home_cache(columns=columns, values=values)
-#     logger.info('status update:', status)
-#     return None
+@shared_task
+def update_home_cache(columns, values):
+    status = db.update_home_cache(columns=columns, values=values)
+    logger.info('status update:', status)
+    return None
 
 # @shared_task
 # def update_recipe_cache(recipe_id, columns, values):
