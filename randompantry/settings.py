@@ -143,11 +143,9 @@ CACHES = {
 }
 
 
-# Celery
-# https://drdaeman.github.io/heroku-djcelery-example/
+# Celery config for production
+# https://qiita.com/hayatek/items/a54e5556995d0ada9483
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_BROKER_TRANSPORT_OPTIONS = { 'max_connections': 2 }
-CELERY_BROKER_POOL_LIMIT = None
-CELERY_CACHE_BACKEND = REDIS_URL
 CELERY_TIMEZONE = TIME_ZONE
