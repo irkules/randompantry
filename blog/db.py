@@ -3,11 +3,11 @@ from django.db import connection
 from pandas import DataFrame
 
 
-'''CONSTANTS'''
+# Constants
 SEPERATOR = ', '
 
 
-'''DATABASE COLUMN NAMES'''
+# DB Column Names
 HOME_COLUMNS = [x.name for x in Home._meta.get_fields()]
 INGREDIENT_COLUMNS = [x.name for x in Ingredient._meta.get_fields()]
 RECIPE_COLUMNS = [x.name for x in Recipe._meta.get_fields()]
@@ -15,7 +15,8 @@ REVIEW_COLUMNS = [x.name for x in Review._meta.get_fields()]
 TAG_COLUMNS = [x.name for x in Tag._meta.get_fields()]
 
 
-'''REGION HOME'''
+# region Home
+
 def get_home_cache(columns=HOME_COLUMNS):
     """
     Retrieve cache info from blog_home table.
@@ -23,7 +24,6 @@ def get_home_cache(columns=HOME_COLUMNS):
     Return cache info as dictionary if cache exists
     Return empty dictionary if cache does not exist
     """
-    # Perform Query
     query = f'''
         SELECT {SEPERATOR.join(columns)}
         FROM blog_home
@@ -85,10 +85,11 @@ def update_home_cache(columns, values):
         return True
     except:
         return False
-'''ENDREGION HOME'''
 
+# endregion Home
 
-'''REGION RECIPE DETAIL'''
+# region Recipe Details Page
+
 def update_recipe_cache(recipe_id, columns, values):
     """
     Update similar recipe ids in blog_recipe table.
@@ -117,29 +118,11 @@ def update_recipe_cache(recipe_id, columns, values):
         return True
     except:
         return False
-'''ENDREGION RECIPE DETAIL'''
+
+# endregion Recipe Details Page
 
 
-'''REGION SHARED'''
-def get_ingredients(ingredient_ids=[], columns=INGREDIENT_COLUMNS):
-    columns_str = str(list(columns))[1:-1].replace("'", "")
-    query = f'''
-        SELECT id, {columns_str}
-        FROM blog_ingredient
-        '''
-    if len(ingredient_ids):
-        ingredient_ids_str = str(list(ingredient_ids))[1:-1]
-        query += f'''
-            WHERE id IN ({ingredient_ids_str})
-            ORDER BY array_position(ARRAY[{ingredient_ids_str}]::integer[], id)
-            '''
-    data = { column: [] for column in columns }
-    rawQuerySet = Ingredient.objects.raw(query)
-    for rawQuery in rawQuerySet:
-        for column in columns:
-            data[column].append(getattr(rawQuery, column))
-    ingredients_data_frame = DataFrame(data)
-    return ingredients_data_frame
+# region Shared
 
 def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
     query = f'''
@@ -156,7 +139,7 @@ def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
         ) as review_table
         ON review_table.recipe_id = recipe_table.id
         '''
-    if len(recipe_ids):
+    if len(recipe_ids) > 0:
         recipe_ids_str = SEPERATOR.join(str(id) for id in recipe_ids)
         query += f'''
             WHERE id IN ({recipe_ids_str})
@@ -171,43 +154,33 @@ def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
     except:
         return DataFrame()
 
-def get_reviews(review_ids=[], columns=REVIEW_COLUMNS):
-    columns_str = str(list(columns))[1:-1].replace("'", "")
+def get_content(table_name, ids, columns):
     query = f'''
-        SELECT id, {columns_str}
-        FROM blog_review
+        SELECT {SEPERATOR.join(columns)}
+        FROM blog_{table_name}
         '''
-    if len(review_ids):
-        review_ids_str = str(list(review_ids))[1:-1]
+    if len(ids) > 0:
+        ids_str = SEPERATOR.join(str(id) for id in ids)
         query += f'''
-            WHERE id IN ({review_ids_str})
-            ORDER BY array_position(ARRAY[{review_ids_str}]::integer[], id)
+            WHERE id IN ({ids_str})
+            ORDER BY array_position(ARRAY[{ids_str}]::integer[], id)
             '''
-    data = { column: [] for column in columns }
-    rawQuerySet = Review.objects.raw(query)
-    for rawQuery in rawQuerySet:
-        for column in columns:
-            data[column].append(getattr(rawQuery, column))
-    reviews_data_frame = DataFrame(data)
-    return reviews_data_frame
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns = [col[0] for col in cursor.description]
+            result_dict = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        return DataFrame(result_dict)
+    except:
+        return DataFrame()
+
+def get_reviews(review_ids=[], columns=REVIEW_COLUMNS):
+    return get_content(table_name='review', ids=review_ids, columns=columns)
+
+def get_ingredients(ingredient_ids=[], columns=INGREDIENT_COLUMNS):
+    return get_content(table_name='ingredient', ids=ingredient_ids, columns=columns)
 
 def get_tags(tag_ids=[], columns=TAG_COLUMNS):
-    columns_str = str(list(columns))[1:-1].replace("'", "")
-    query = f'''
-        SELECT id, {columns_str}
-        FROM blog_tag
-        '''
-    if len(tag_ids):
-        tag_ids_str = str(list(tag_ids))[1:-1]
-        query += f'''
-            WHERE id IN ({tag_ids_str})
-            ORDER BY array_position(ARRAY[{tag_ids_str}]::integer[], id)
-            '''
-    data = { column: [] for column in columns }
-    rawQuerySet = Tag.objects.raw(query)
-    for rawQuery in rawQuerySet:
-        for column in columns:
-            data[column].append(getattr(rawQuery, column))
-    tags_data_frame = DataFrame(data)        
-    return tags_data_frame
-'''ENDREGION SHARED'''
+    return get_content(table_name='tag', ids=tag_ids, columns=columns)
+
+# endregion Shared

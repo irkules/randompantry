@@ -26,7 +26,7 @@ class HomeContent:
     @staticmethod
     def refresh_home_content():
         cache.delete_many([redis.RECOMMENDED_KEY, redis.MAKE_AGAIN_KEY, redis.TOP_RATED_KEY])
-        if celery_is_running():
+        if celery_is_running:
             tasks.refresh_home_content.delay()
         else:
             tasks.refresh_home_content()
