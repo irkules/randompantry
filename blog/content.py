@@ -1,27 +1,39 @@
-from django.core.cache import cache
 import numpy as np
-from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.decomposition import TruncatedSVD
-from surprise import Dataset, KNNBaseline, Reader
 from blog import db, redis, tasks
 from blog.models import Recipe
 from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
 from blog.recommender import RecipeRecommender
+from django.core.cache import cache
+from randompantry import settings
+from randompantry.celery import celery_is_running
+from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.decomposition import TruncatedSVD
+from surprise import Dataset, KNNBaseline, Reader
 
 
 class HomeContent:
     @staticmethod
     def get_home_context():
+        favourites = [] # TODO: Implement this!
         reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
-        recommended = HomeContent.get_recommended(reviews)
-        favourites = HomeContent.get_favourites()
-        make_again = HomeContent.get_make_again(reviews)
-        top_rated = HomeContent.get_top_rated(reviews)
-        return recommended, favourites, make_again, top_rated
+        if len(reviews) > 0:
+            recommended = HomeContent.get_recommended(reviews)
+            make_again = HomeContent.get_make_again(reviews)
+            top_rated = HomeContent.get_top_rated(reviews)
+            return recommended, favourites, make_again, top_rated
+        return [], favourites, [], []
+
+    @staticmethod
+    def refresh_home_content():
+        cache.delete_many([redis.RECOMMENDED_KEY, redis.MAKE_AGAIN_KEY, redis.TOP_RATED_KEY])
+        if celery_is_running():
+            tasks.refresh_home_content.delay()
+        else:
+            tasks.refresh_home_content()
 
     @staticmethod
     def get_recommended(reviews):
-        if len(reviews) == 0 or (reviews.user_id != 1).all():
+        if (reviews.user_id != 1).all():
             return []
         if redis.RECOMMENDED_KEY in cache:
             recommended_ids = cache.get(redis.RECOMMENDED_KEY)
@@ -30,26 +42,19 @@ class HomeContent:
             if 'recommended' in db_cache:
                 recommended_ids = db_cache['recommended']
                 if recommended_ids == [-1] or recommended_ids is None: # If cache was previously purged
-                    recommended_ids = HomeContent.get_recommended_ids(reviews)
+                    recommended_ids = tasks.get_recommended_ids(reviews)
                     db.update_home_cache(columns=['recommended'], values=[recommended_ids])
                 cache.set(redis.RECOMMENDED_KEY, recommended_ids)
             else:
-                recommended_ids = HomeContent.get_recommended_ids(reviews)
+                recommended_ids = tasks.get_recommended_ids(reviews)
                 cache.set(redis.RECOMMENDED_KEY, recommended_ids)
                 db.update_home_cache(columns=['recommended'], values=[recommended_ids])
-        recommended = HomeContent.get_recommended_recipes(recommended_ids, reviews)
-        return recommended
-
-    @staticmethod
-    def get_recommended_ids(reviews):
-        recommender = RecipeRecommender()
-        recommender.fit(reviews)
-        recommended_ids = recommender.predict(reviews)
-        return recommended_ids
+        return HomeContent.get_recommended_recipes(recommended_ids, reviews)
 
     @staticmethod
     def get_recommended_recipes(recommended_ids, reviews):
         if len(recommended_ids):
+            # TODO: Refactor this!
             recipes = db.get_recipes(recipe_ids=recommended_ids, columns=['id', 'name', 'description', 'img_url', 'rating'])
             return [{
                 'id': x[0],
@@ -59,25 +64,12 @@ class HomeContent:
                 'rating': range(int(np.round(x[4]))),
                 'rating_null': range(5 - int(np.round(x[4])))
             } for x in recipes.values]
-        else:
-            return []
-
-    @staticmethod
-    def purge_home_cache():
-        cache.delete(redis.RECOMMENDED_KEY)
-        cache.delete(redis.MAKE_AGAIN_KEY)
-        cache.delete(redis.TOP_RATED_KEY)
-        tasks.update_home_cache.delay(columns=['recommended', 'make_again', 'top_rated'], values=[[-1], [-1], [-1]])
-
-    # TODO: Implentation this!
-    @staticmethod
-    def get_favourites():
         return []
 
     @staticmethod
     def get_make_again(reviews):
-        if len(reviews) == 0 or (reviews.user_id != 1).all():
-            return [] 
+        if (reviews.user_id != 1).all():
+            return []
         if redis.MAKE_AGAIN_KEY in cache:
             make_again_ids = cache.get(redis.MAKE_AGAIN_KEY)
         else:
@@ -85,24 +77,18 @@ class HomeContent:
             if 'make_again' in db_cache:
                 make_again_ids = db_cache['make_again']
                 if make_again_ids == [-1] or make_again_ids is None: # If cache was previously purged
-                    make_again_ids = HomeContent.get_make_again_ids(reviews)
+                    make_again_ids = tasks.get_make_again_ids(reviews)
                     db.update_home_cache(columns=['make_again'], values=[make_again_ids])
                 cache.set(redis.MAKE_AGAIN_KEY, make_again_ids)
             else:
-                make_again_ids = HomeContent.get_make_again_ids(reviews)
+                make_again_ids = tasks.get_make_again_ids(reviews)
                 cache.set(redis.MAKE_AGAIN_KEY, make_again_ids)
                 db.update_home_cache(columns=['make_again'], values=[make_again_ids])
         return RecipeDetailContent.get_recipes(make_again_ids, reviews)
 
     @staticmethod
-    def get_make_again_ids(reviews):
-        user_reviews = reviews[reviews.user_id == 1]
-        sorted_reviews = user_reviews.sort_values(by=['rating'], ascending=False)
-        return list(sorted_reviews.recipe_id.values[:20])
-
-    @staticmethod
     def get_top_rated(reviews):
-        if len(reviews) == 0 or (reviews.user_id != 1).all():
+        if (reviews.user_id != 1).all():
             return [] 
         if redis.TOP_RATED_KEY in cache:
             top_rated_ids = cache.get(redis.TOP_RATED_KEY)
@@ -111,26 +97,20 @@ class HomeContent:
             if 'top_rated' in db_cache:
                 top_rated_ids = db_cache['top_rated']
                 if top_rated_ids == [-1] or top_rated_ids is None: # If cache was previously purged
-                    top_rated_ids = HomeContent.get_top_rated_ids(reviews)
+                    top_rated_ids = tasks.get_top_rated_ids(reviews)
                     db.update_home_cache(columns=['top_rated'], values=[top_rated_ids])
                 cache.set(redis.TOP_RATED_KEY, top_rated_ids)
             else:
-                top_rated_ids = HomeContent.get_top_rated_ids(reviews)
+                top_rated_ids = tasks.get_top_rated_ids(reviews)
                 cache.set(redis.TOP_RATED_KEY, top_rated_ids)
                 db.update_home_cache(columns=['top_rated'], values=[top_rated_ids])
         return RecipeDetailContent.get_recipes(top_rated_ids, reviews)
 
-    @staticmethod
-    def get_top_rated_ids(reviews):
-        reviews = reviews.groupby('recipe_id')[['rating', 'recipe_id']].mean().reset_index(drop=True)
-        reviews['count'] = reviews.groupby('recipe_id').rating.count().values
-        sorted_reviews = reviews.sort_values(by=['rating', 'count'], ascending=[False, False])
-        return list(sorted_reviews.recipe_id.values[:20])
-
 class RecipeDetailContent:
     @staticmethod
     def get_recipe_detail_context(recipe_id):
-        # TODO: recipe = recipes[recipes.id == recipe_id]
+        # TODO: Refactor this and handle invalid id!
+        # recipe = recipes[recipes.id == recipe_id]
         current_recipe = Recipe.objects.get(id=recipe_id)
         recipes = db.get_recipes()
         reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
@@ -169,14 +149,12 @@ class RecipeDetailContent:
             mean_rating = int(np.round(current_recipe_review.rating.mean()))
             rating = range(mean_rating)
             rating_null = range(5 - mean_rating)
-        else:
-            rating = []
-            rating_null = []
-        return rating, rating_null
+            return rating, rating_null
+        return [], []
 
     @staticmethod
     def get_similar_rating(recipe_id, reviews):
-        if len(reviews) == 0 or (reviews.recipe_id != recipe_id).all():
+        if (reviews.recipe_id != recipe_id).all():
             return []
         model = NearestRecipesBaseline(k=40)
         model.fit(reviews)
@@ -185,8 +163,6 @@ class RecipeDetailContent:
 
     @staticmethod
     def get_similar_ingredients(recipe_id, recipes, reviews):
-        if len(recipes) == 0:
-            return []
         model = NearestRecipes()
         model.fit(recipes.ingredient_ids)
         nearest_recipe_ids = model.predict(recipe_id, recipes.id)
@@ -194,8 +170,6 @@ class RecipeDetailContent:
 
     @staticmethod
     def get_similar_tags(recipe_id, recipes, reviews):
-        if len(recipes) == 0:
-            return []
         model = NearestRecipes()
         model.fit(recipes.tag_ids)
         nearest_recipe_ids = model.predict(recipe_id, recipes.id)
@@ -203,8 +177,6 @@ class RecipeDetailContent:
 
     @staticmethod
     def get_similar_nutrition(recipe_id, recipes, reviews):
-        if len(recipes) == 0:
-            return []
         model = NearestRecipes(reduce=False)
         model.fit(recipes.nutrition)
         nearest_recipe_ids = model.predict(recipe_id, recipes.id)
@@ -221,8 +193,3 @@ class RecipeDetailContent:
             'rating': range(int(np.round(x[4]))),
             'rating_null': range(5 - int(np.round(x[4])))
         } for x in recipes.values]
-
-    # TODO: Implement this!
-    @staticmethod
-    def purge_similar_cache():
-        return None

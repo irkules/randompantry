@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
+
 from celery import Celery
+from celery.bin.celery import CeleryCommand
 from os import environ
 
 
@@ -21,3 +23,13 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))
+
+
+status = CeleryCommand.commands['status']()
+status.app = status.get_app()
+def celery_is_running():
+    try:
+        status.run()
+        return True   
+    except:
+        return False

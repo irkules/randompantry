@@ -1,9 +1,7 @@
-from django.shortcuts import render
-import numpy as np
-import pandas as pd
-from blog.models import Recipe, Review
-from blog.forms import UserReviewForm
 from blog.content import HomeContent, RecipeDetailContent
+from blog.forms import UserReviewForm
+from blog.models import Review
+from django.shortcuts import render
 
 
 def home(request):
@@ -21,14 +19,14 @@ def recipe_detail_view(request, pk):
     if request.method == 'POST':
         form = UserReviewForm(request.POST)
         if form.is_valid():
+            # TODO: Move this to db.py
             Review.objects.create(
                 rating=form.cleaned_data['rating'],
                 review=form.cleaned_data['review'],
                 recipe_id=pk,
                 user_id=1
             )
-            HomeContent.purge_home_cache()
-            RecipeDetailContent.purge_similar_cache()
+            HomeContent.refresh_home_content()
     else:
         form = UserReviewForm()
     recipe_detail_context = RecipeDetailContent.get_recipe_detail_context(pk)
