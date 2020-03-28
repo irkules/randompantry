@@ -119,6 +119,18 @@ def update_recipe_cache(recipe_id, columns, values):
     except:
         return False
 
+def insert_review(rating, review, recipe_id, user_id):
+    query = f'''
+        INSERT INTO blog_review (rating, review, date, recipe_id, user_id)
+        VALUES({rating}, {review}, NOW(), {recipe_id}, {user_id});
+        '''
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+        return True
+    except:
+        return False
+
 # endregion Recipe Details Page
 
 

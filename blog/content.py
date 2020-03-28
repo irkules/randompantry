@@ -5,11 +5,9 @@ from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
 from blog.recommender import RecipeRecommender
 from django.core.cache import cache
 from randompantry import settings
-from randompantry.celery import celery_is_running
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.decomposition import TruncatedSVD
 from surprise import Dataset, KNNBaseline, Reader
-
 
 class HomeContent:
     @staticmethod
@@ -22,14 +20,6 @@ class HomeContent:
             top_rated = HomeContent.get_top_rated(reviews)
             return recommended, favourites, make_again, top_rated
         return [], favourites, [], []
-
-    @staticmethod
-    def refresh_home_content():
-        cache.delete_many([redis.RECOMMENDED_KEY, redis.MAKE_AGAIN_KEY, redis.TOP_RATED_KEY])
-        if celery_is_running:
-            tasks.refresh_home_content.delay()
-        else:
-            tasks.refresh_home_content()
 
     @staticmethod
     def get_recommended(reviews):
@@ -193,3 +183,11 @@ class RecipeDetailContent:
             'rating': range(int(np.round(x[4]))),
             'rating_null': range(5 - int(np.round(x[4])))
         } for x in recipes.values]
+
+    @staticmethod
+    def add_review(rating, review, recipe_id, user_id):
+        cache.delete_many([redis.RECOMMENDED_KEY, redis.MAKE_AGAIN_KEY, redis.TOP_RATED_KEY])
+        if settings.USE_CELERY:
+            tasks.insert_review.delay(rating, review, recipe_id, user_id)
+        else:
+            tasks.insert_review(rating, review, recipe_id, user_id)

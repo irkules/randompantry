@@ -19,14 +19,12 @@ def recipe_detail_view(request, pk):
     if request.method == 'POST':
         form = UserReviewForm(request.POST)
         if form.is_valid():
-            # TODO: Move this to db.py
-            Review.objects.create(
+            RecipeDetailContent.add_review(
                 rating=form.cleaned_data['rating'],
                 review=form.cleaned_data['review'],
                 recipe_id=pk,
                 user_id=1
             )
-            HomeContent.refresh_home_content()
     else:
         form = UserReviewForm()
     recipe_detail_context = RecipeDetailContent.get_recipe_detail_context(pk)

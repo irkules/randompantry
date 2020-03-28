@@ -4,7 +4,12 @@ from blog import db
 from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
 from blog.recommender import RecipeRecommender
 from celery import shared_task
+from celery.signals import worker_ready
 
+
+@worker_ready.connect
+def app_startup_tasks(*args, **kwargs):
+    refresh_home_content()
 
 @shared_task
 def refresh_home_content():
@@ -47,6 +52,11 @@ def get_top_rated_ids(reviews):
     reviews['count'] = reviews.groupby('recipe_id').rating.count().values
     sorted_reviews = reviews.sort_values(by=['rating', 'count'], ascending=[False, False])
     return sorted_reviews.recipe_id.tolist()[:20]
+
+@shared_task
+def insert_review(rating, review, recipe_id, user_id):
+    db.insert_review(rating, review, recipe_id, user_id)
+    refresh_home_content()
 
 # @shared_task
 # def train_SVDpp_model(params):
