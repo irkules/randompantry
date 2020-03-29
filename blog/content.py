@@ -1,5 +1,4 @@
 from blog import db, tasks
-from blog.models import Recipe
 from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
 from blog.recommender import RecipeRecommender
 from blog.redis import RECOMMENDED_KEY, FAVOURITES_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY
@@ -116,10 +115,19 @@ class RecipeDetailContent(Content):
         similar_nutrition_ids = current_recipe['similar_nutrition']
         has_cached_ids = similar_rating_ids and similar_ingredient_ids and similar_tag_ids and similar_nutrition_ids
         if not has_cached_ids:
+            recipe_ids = []
+            ingredient_ids = []
+            tag_ids = []
+            nutrition = []
+            for recipe in recipes:
+                recipe_ids.append(recipe['id'])
+                ingredient_ids.append(recipe['ingredient_ids'])
+                tag_ids.append(recipe['tag_ids'])
+                nutrition.append(recipe['nutrition'])
             similar_rating_ids = RecipeDetailContent.get_similar_rating_ids(recipe_id, reviews)
-            similar_ingredient_ids = RecipeDetailContent.get_similar_ingredients_ids(recipe_id, recipes)
-            similar_tag_ids = RecipeDetailContent.get_similar_tags_ids(recipe_id, recipes)
-            similar_nutrition_ids = RecipeDetailContent.get_similar_nutrition_ids(recipe_id, recipes)
+            similar_ingredient_ids = RecipeDetailContent.get_similar_ids(recipe_id, recipe_ids, ingredient_ids)
+            similar_tag_ids = RecipeDetailContent.get_similar_ids(recipe_id, recipe_ids, tag_ids)
+            similar_nutrition_ids = RecipeDetailContent.get_similar_ids(recipe_id, recipe_ids, nutrition, reduce=False)
             db.update_recipe_cache(
                 recipe_id=recipe_id,
                 columns=['similar_rating', 'similar_ingredients', 'similar_tags', 'similar_nutrition'],
@@ -150,25 +158,10 @@ class RecipeDetailContent(Content):
         return model.predict(recipe_id)
 
     @staticmethod
-    def get_similar_ingredients_ids(recipe_id, recipes):
-        model = NearestRecipes()
-        ingredient_ids_list = [recipe['ingredient_ids'] for recipe in recipes]
-        model.fit(ingredient_ids_list)
-        return model.predict(recipe_id, recipes.id)
-
-    @staticmethod
-    def get_similar_tags_ids(recipe_id, recipes):
-        model = NearestRecipes()
-        tag_ids_list = [recipe['tag_ids'] for recipe in recipes]
-        model.fit(tag_ids_list)
-        return model.predict(recipe_id, recipes.id)
-
-    @staticmethod
-    def get_similar_nutrition_ids(recipe_id, recipes):
-        model = NearestRecipes(reduce=False)
-        nutrition_list = [recipe['nutrition'] for recipe in recipes]
-        model.fit(nutrition_list)
-        return model.predict(recipe_id, recipes.id)
+    def get_similar_ids(recipe_id, recipe_ids, feature_ids, reduce=True):
+        model = NearestRecipes(reduce=reduce)
+        model.fit(feature_ids)
+        return model.predict(recipe_id, recipe_ids)
 
     @staticmethod
     def add_review(rating, review, recipe_id, user_id):
