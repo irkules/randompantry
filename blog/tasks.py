@@ -14,23 +14,10 @@ def app_startup_tasks(*args, **kwargs):
 @shared_task
 def refresh_home_content():
     reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
-    # Recommended
-    get_recommended_ids
     recommended_ids = get_recommended_ids(reviews)
-    columnsToUpdate = ['recommended']
-    valuesToUpdate = [recommended_ids]
-    # Make Again
-    globalUserId = 1
-    hasUserReview = (reviews.user_id == globalUserId).any()
-    if hasUserReview:
-        make_again_ids = get_make_again_ids(reviews)
-        columnsToUpdate.append('make_again')
-        valuesToUpdate.append(make_again_ids)
-    # Top Rated
-    top_rated_ids = get_top_rated_ids(reviews)
-    columnsToUpdate.append('top_rated')
-    valuesToUpdate.append(top_rated_ids)
-    db.update_home_cache(columns=columnsToUpdate, values=valuesToUpdate)
+    db.update_home_cache(columns=['recommended'], values=[recommended_ids])
+    db.get_make_again(columns=['id'], update_only=True)
+    db.get_top_rated(columns=['id'], update_only=True)
     return None
 
 @shared_task
@@ -39,19 +26,6 @@ def get_recommended_ids(reviews):
     recommender.fit(reviews)
     recommended_ids = recommender.predict(reviews)
     return recommended_ids
-
-@shared_task
-def get_make_again_ids(reviews):
-    user_reviews = reviews[reviews.user_id == 1]
-    sorted_reviews = user_reviews.sort_values(by=['rating'], ascending=False)
-    return sorted_reviews.recipe_id.tolist()[:20]
-
-@shared_task
-def get_top_rated_ids(reviews):
-    reviews = reviews.groupby('recipe_id')[['rating', 'recipe_id']].mean().reset_index(drop=True)
-    reviews['count'] = reviews.groupby('recipe_id').rating.count().values
-    sorted_reviews = reviews.sort_values(by=['rating', 'count'], ascending=[False, False])
-    return sorted_reviews.recipe_id.tolist()[:20]
 
 @shared_task
 def insert_review(rating, review, recipe_id, user_id):

@@ -11,7 +11,7 @@ from statistics import mean
 
 class Content:
     @staticmethod
-    def get_recipes(ids, reviews, all_columns=False):
+    def get_recipes(ids=None, all_columns=False):
         if all_columns:
             recipes = db.get_recipes(recipe_ids=ids)
         else:
@@ -26,79 +26,77 @@ class HomeContent(Content):
     @staticmethod
     def get_home_context():
         home = dict()
-        reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
-        if len(reviews):
-            home['top_rated'] = HomeContent.get_top_rated(reviews)
-            if (reviews['user_id'] == 1).any():
-                home['recommended'] = HomeContent.get_recommended(reviews)
-                home['make_again'] = HomeContent.get_make_again(reviews)
+        home['make_again'] = HomeContent.get_make_again()
+        home['top_rated'] = HomeContent.get_top_rated()
+        home['recommended'] = HomeContent.get_recommended()
         return home
 
     @staticmethod
-    def get_recommended(reviews):
+    def get_recommended():
+        reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])       
         if RECOMMENDED_KEY in cache:
             recommended_ids = cache.get(RECOMMENDED_KEY)
-        else:
-            db_cache = db.get_home_cache(columns=['recommended'])
-            if 'recommended' in db_cache:
-                recommended_ids = db_cache['recommended']
-                if recommended_ids == [-1] or recommended_ids is None: # If cache was previously purged
-                    recommended_ids = tasks.get_recommended_ids(reviews)
-                    db.update_home_cache(columns=['recommended'], values=[recommended_ids])
-                cache.set(RECOMMENDED_KEY, recommended_ids)
-            else:
-                recommended_ids = tasks.get_recommended_ids(reviews)
-                cache.set(RECOMMENDED_KEY, recommended_ids)
-                db.update_home_cache(columns=['recommended'], values=[recommended_ids])
-        return HomeContent.get_recipes(recommended_ids, reviews)
+            return HomeContent.get_recipes(recommended_ids)
+        db_cache = db.get_home_cache(columns=['recommended'])
+        if 'recommended' in db_cache:
+            recommended_ids = db_cache['recommended']
+            cache.set(RECOMMENDED_KEY, recommended_ids)
+            return HomeContent.get_recipes(recommended_ids)
+        recommended_ids = tasks.get_recommended_ids(reviews)
+        cache.set(RECOMMENDED_KEY, recommended_ids)
+        db.update_home_cache(columns=['recommended'], values=[recommended_ids])
+        return HomeContent.get_recipes(recommended_ids)
 
     @staticmethod
-    def get_make_again(reviews):
+    def get_make_again():
         if MAKE_AGAIN_KEY in cache:
             make_again_ids = cache.get(MAKE_AGAIN_KEY)
-        else:
-            db_cache = db.get_home_cache(columns=['make_again'])
-            if 'make_again' in db_cache:
-                make_again_ids = db_cache['make_again']
-                if make_again_ids == [-1] or make_again_ids is None: # If cache was previously purged
-                    make_again_ids = tasks.get_make_again_ids(reviews)
-                    db.update_home_cache(columns=['make_again'], values=[make_again_ids])
-                cache.set(MAKE_AGAIN_KEY, make_again_ids)
-            else:
-                make_again_ids = tasks.get_make_again_ids(reviews)
-                cache.set(MAKE_AGAIN_KEY, make_again_ids)
-                db.update_home_cache(columns=['make_again'], values=[make_again_ids])
-        return RecipeDetailContent.get_recipes(make_again_ids, reviews)
+            return RecipeDetailContent.get_recipes(make_again_ids)
+        db_cache = db.get_home_cache(columns=['make_again'])
+        if 'make_again' in db_cache:
+            make_again_ids = db_cache['make_again']
+            cache.set(MAKE_AGAIN_KEY, make_again_ids)
+            return RecipeDetailContent.get_recipes(make_again_ids)
+        make_again = db.get_make_again()
+        for recipe in make_again:
+            current_rating = round(recipe['rating'])
+            recipe['rating'] = range(current_rating)
+            recipe['rating_null'] = range(5 - current_rating)
+        make_again_ids = [recipe['id'] for recipe in make_again]
+        cache.set(MAKE_AGAIN_KEY, make_again_ids)
+        return RecipeDetailContent.get_recipes(make_again_ids)
 
     @staticmethod
-    def get_top_rated(reviews):
+    def get_top_rated():
         if TOP_RATED_KEY in cache:
             top_rated_ids = cache.get(TOP_RATED_KEY)
-        else:
-            db_cache = db.get_home_cache(columns=['top_rated'])
-            if 'top_rated' in db_cache:
-                top_rated_ids = db_cache['top_rated']
-                if top_rated_ids == [-1] or top_rated_ids is None: # If cache was previously purged
-                    top_rated_ids = tasks.get_top_rated_ids(reviews)
-                    db.update_home_cache(columns=['top_rated'], values=[top_rated_ids])
-                cache.set(TOP_RATED_KEY, top_rated_ids)
-            else:
-                top_rated_ids = tasks.get_top_rated_ids(reviews)
-                cache.set(TOP_RATED_KEY, top_rated_ids)
-                db.update_home_cache(columns=['top_rated'], values=[top_rated_ids])
-        return RecipeDetailContent.get_recipes(top_rated_ids, reviews)
+            return RecipeDetailContent.get_recipes(top_rated_ids)
+        db_cache = db.get_home_cache(columns=['top_rated'])
+        if 'top_rated' in db_cache:
+            top_rated_ids = db_cache['top_rated']
+            cache.set(TOP_RATED_KEY, top_rated_ids)
+            return RecipeDetailContent.get_recipes(top_rated_ids)
+        top_rated = db.get_top_rated()
+        for recipe in top_rated:
+            current_rating = round(recipe['rating'])
+            recipe['rating'] = range(current_rating)
+            recipe['rating_null'] = range(5 - current_rating)
+        top_rated_ids = [recipe['id'] for recipe in top_rated]
+        cache.set(TOP_RATED_KEY, top_rated_ids)
+        return top_rated
 
 class RecipeDetailContent(Content):
     @staticmethod
     def get_recipe_detail_context(recipe_id):
-        reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
-        recipes = RecipeDetailContent.get_recipes([], reviews, all_columns=True)
+        # TODO: Make db method to retrieve recipe info
+        recipes = RecipeDetailContent.get_recipes(all_columns=True)
         # Current Recipe Attributes
         matched_recipes = [recipe for recipe in recipes if recipe['id'] == recipe_id]
         if not matched_recipes:
             return None
         current_recipe = matched_recipes[0]
         current_recipe['description'] = current_recipe['description'].capitalize()
+        reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
         current_recipe['has_rated'] = len(reviews[logical_and(reviews.user_id == 1, reviews.recipe_id == recipe_id)]) != 0
         ingredients = db.get_ingredients(ingredient_ids=current_recipe['ingredient_ids'])
         current_recipe['ingredients'] = [ingredient.capitalize() for ingredient in ingredients]
@@ -119,18 +117,18 @@ class RecipeDetailContent(Content):
         has_cached_ids = similar_rating_ids and similar_ingredient_ids and similar_tag_ids and similar_nutrition_ids
         if not has_cached_ids:
             similar_rating_ids = RecipeDetailContent.get_similar_rating_ids(recipe_id, reviews)
-            similar_ingredient_ids = RecipeDetailContent.get_similar_ingredients_ids(recipe_id, recipes, reviews)
-            similar_tag_ids = RecipeDetailContent.get_similar_tags_ids(recipe_id, recipes, reviews)
-            similar_nutrition_ids = RecipeDetailContent.get_similar_nutrition_ids(recipe_id, recipes, reviews)
+            similar_ingredient_ids = RecipeDetailContent.get_similar_ingredients_ids(recipe_id, recipes)
+            similar_tag_ids = RecipeDetailContent.get_similar_tags_ids(recipe_id, recipes)
+            similar_nutrition_ids = RecipeDetailContent.get_similar_nutrition_ids(recipe_id, recipes)
             db.update_recipe_cache(
                 recipe_id=recipe_id,
                 columns=['similar_rating', 'similar_ingredients', 'similar_tags', 'similar_nutrition'],
                 values=[similar_rating_ids, similar_ingredient_ids, similar_tag_ids, similar_rating_ids]
             )
-        current_recipe['similar_rating'] = RecipeDetailContent.get_recipes(similar_rating_ids, reviews)
-        current_recipe['similar_ingredients'] = RecipeDetailContent.get_recipes(similar_ingredient_ids, reviews)
-        current_recipe['similar_tags'] = RecipeDetailContent.get_recipes(similar_tag_ids, reviews)
-        current_recipe['similar_nutrition'] = RecipeDetailContent.get_recipes(similar_nutrition_ids, reviews)
+        current_recipe['similar_rating'] = RecipeDetailContent.get_recipes(similar_rating_ids)
+        current_recipe['similar_ingredients'] = RecipeDetailContent.get_recipes(similar_ingredient_ids)
+        current_recipe['similar_tags'] = RecipeDetailContent.get_recipes(similar_tag_ids)
+        current_recipe['similar_nutrition'] = RecipeDetailContent.get_recipes(similar_nutrition_ids)
         return current_recipe
 
     @staticmethod

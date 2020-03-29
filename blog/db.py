@@ -64,7 +64,8 @@ def update_home_cache(columns, values):
     subquery_values = SEPERATOR.join([f'ARRAY{value}::integer[]' for value in values])
     # Perform Query
     query = f'''
-        DO $$
+        DO 
+        $$
         BEGIN
             IF (EXISTS (SELECT * FROM blog_home WHERE id = 1)) THEN
                 UPDATE blog_home
@@ -74,7 +75,8 @@ def update_home_cache(columns, values):
                 INSERT INTO blog_home (recommended, favourites, make_again, top_rated)
                 VALUES({subquery_values});
             END IF;
-        END$$;
+        END
+        $$;
         '''
     try:
         with connection.cursor() as cursor:
@@ -82,6 +84,150 @@ def update_home_cache(columns, values):
         return True
     except:
         return False
+
+def get_top_rated(columns=['id', 'name', 'description', 'img_url', 'rating'], n=20, update_only=False):
+    """
+    Retrieve Top Rated Recipes from blog_recipe table.
+    NOTE: This function updates cache after retrieval.
+
+    Keyword arguments:
+    columns: str[] -- the list of columns to be returned
+    n: int -- the number of recipes to be returned
+
+    If update_only:
+        Return True if updated
+        Return False if update failed
+    Else:
+        Return Array of Dictionary if retrieved successfully
+        Return Empty Array if retrieval failed
+    """
+    query = f'''
+        DO 
+        $$ 
+        DECLARE 
+            top_rated_ids INTEGER[];
+        BEGIN
+            DROP TABLE IF EXISTS top_rated;
+            CREATE TEMP TABLE top_rated AS
+                SELECT {SEPERATOR.join(columns)}
+                FROM (
+                    SELECT recipe_id, AVG(rating) as rating
+                    FROM blog_review
+                    GROUP BY recipe_id
+                    ORDER BY COUNT(rating) DESC
+                    LIMIT {n}
+                ) as review_table
+                LEFT JOIN (
+                    SELECT *
+                    FROM blog_recipe
+                ) as recipe_table
+                ON review_table.recipe_id = recipe_table.id;
+            top_rated_ids := ARRAY(SELECT id FROM top_rated);	
+            IF (EXISTS (SELECT id FROM blog_home WHERE id = 1)) THEN
+                UPDATE blog_home
+                SET top_rated = top_rated_ids
+                WHERE id = 1;
+            ELSE
+                INSERT INTO blog_home (recommended, favourites, make_again, top_rated)
+                VALUES(ARRAY[]::integer[], ARRAY[]::integer[], ARRAY[]::integer[], top_rated_ids);
+            END IF;
+        END
+        $$;
+        '''
+    if update_only:
+        query += '''
+            DROP TABLE top_rated;
+            '''
+    else:
+        query += '''
+            SELECT * FROM top_rated;
+            '''
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            if update_only:
+                return True
+            else:
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+                return [dict(zip(columns, row)) for row in rows]
+    except:
+        if update_only:
+            return False
+        else:
+            return []
+
+def get_make_again(columns=['id', 'name', 'description', 'img_url', 'rating'], n=20, update_only=False):
+    """
+    Retrieve Previously Rated Recipes from blog_recipe table.
+    NOTE: This function updates cache after retrieval.
+
+    Keyword arguments:
+    columns: str[] -- the list of columns to be returned
+    n: int -- the number of recipes to be returned
+
+    If update_only:
+        Return True if updated
+        Return False if update failed
+    Else:
+        Return Array of Dictionary if retrieved successfully
+        Return Empty Array if retrieval failed
+    """
+    query = f'''
+        DO 
+        $$ 
+        DECLARE 
+            make_again_ids INTEGER[];
+        BEGIN
+            DROP TABLE IF EXISTS make_again;
+            CREATE TEMP TABLE make_again AS
+                SELECT {SEPERATOR.join(columns)}
+                FROM (
+                    SELECT recipe_id, rating
+                    FROM blog_review
+                    WHERE user_id = 1
+                    ORDER BY date DESC
+                    LIMIT {n}
+                ) as review_table
+                LEFT JOIN (
+                    SELECT *
+                    FROM blog_recipe
+                ) as recipe_table
+                ON review_table.recipe_id = recipe_table.id;
+            make_again_ids := ARRAY(SELECT id FROM make_again);	
+            IF (EXISTS (SELECT id FROM blog_home WHERE id = 1)) THEN
+                UPDATE blog_home
+                SET make_again = make_again_ids
+                WHERE id = 1;
+            ELSE
+                INSERT INTO blog_home (recommended, favourites, make_again, top_rated)
+                VALUES(ARRAY[]::integer[], ARRAY[]::integer[], make_again_ids, ARRAY[]::integer[]);
+            END IF;
+        END
+        $$;
+        '''
+    if update_only:
+        query += '''
+            DROP TABLE make_again;
+            '''
+    else:
+        query += '''
+            SELECT * FROM make_again;
+            '''
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            if update_only:
+                return True
+            else:
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+                return [dict(zip(columns, row)) for row in rows]
+    except:
+        if update_only:
+            return False
+        else:
+            return []
 
 # endregion Home
 
@@ -133,22 +279,24 @@ def insert_review(rating, review, recipe_id, user_id):
 
 # region Shared
 
-def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
+def get_recipes(recipe_ids=None, columns=RECIPE_COLUMNS):
+    if recipe_ids == []:
+        return []
     query = f'''
         SELECT {SEPERATOR.join(columns)}, rating
         FROM (
             SELECT * FROM blog_recipe
-        ) as recipe_table
+        ) AS recipe_table
         LEFT JOIN
         (
             SELECT recipe_id, AVG(rating) as rating
             FROM blog_recipe, blog_review 
             WHERE blog_recipe.id = blog_review.recipe_id
             GROUP BY recipe_id
-        ) as review_table
+        ) AS review_table
         ON review_table.recipe_id = recipe_table.id
         '''
-    if len(recipe_ids) > 0:
+    if recipe_ids:
         recipe_ids_str = SEPERATOR.join(str(id) for id in recipe_ids)
         query += f'''
             WHERE id IN ({recipe_ids_str})
