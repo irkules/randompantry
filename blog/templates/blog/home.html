@@ -67,7 +67,7 @@
  
     <!-- Recommended Content -->
     
-    {% if recommendations %}
+    {% if recommended %}
         <div class="container-fluid titleCard">
             <h2 class="rowHeader">
                 <span class="rowTitle">
@@ -75,7 +75,7 @@
                 </span>
             </h2>
             <ul id="recSlider">
-                {% for rec in recommendations %}
+                {% for rec in recommended %}
                     <li>
                         <div class="hovereffect">
                             <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
@@ -96,7 +96,7 @@
             </ul>
         </div>
         <!-- Recommendation Modals -->
-        {% for rec in recommendations %}
+        {% for rec in recommended %}
             <div class="modal fade" id="modal_{{ rec.id }}">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">            

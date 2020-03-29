@@ -9,10 +9,8 @@ SEPERATOR = ', '
 
 # DB Column Names
 HOME_COLUMNS = [x.name for x in Home._meta.get_fields()]
-INGREDIENT_COLUMNS = [x.name for x in Ingredient._meta.get_fields()]
 RECIPE_COLUMNS = [x.name for x in Recipe._meta.get_fields()]
 REVIEW_COLUMNS = [x.name for x in Review._meta.get_fields()]
-TAG_COLUMNS = [x.name for x in Tag._meta.get_fields()]
 
 
 # region Home
@@ -33,8 +31,7 @@ def get_home_cache(columns=HOME_COLUMNS):
         with connection.cursor() as cursor:
             cursor.execute(query)
             row = cursor.fetchone()
-            cache_dict = dict(zip(columns, row))
-        return cache_dict
+        return dict(zip(columns, row))
     except:
         return dict()
 
@@ -138,7 +135,7 @@ def insert_review(rating, review, recipe_id, user_id):
 
 def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
     query = f'''
-        SELECT {SEPERATOR.join(columns)}
+        SELECT {SEPERATOR.join(columns)}, rating
         FROM (
             SELECT * FROM blog_recipe
         ) as recipe_table
@@ -161,10 +158,10 @@ def get_recipes(recipe_ids=[], columns=RECIPE_COLUMNS):
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [col[0] for col in cursor.description]
-            recipes_dict = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        return DataFrame(recipes_dict)
+            rows = cursor.fetchall()
+        return [dict(zip(columns, row)) for row in rows]
     except:
-        return DataFrame()
+        return []
 
 def get_content(table_name, ids, columns):
     query = f'''
@@ -181,18 +178,21 @@ def get_content(table_name, ids, columns):
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [col[0] for col in cursor.description]
-            result_dict = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        return DataFrame(result_dict)
+            rows = cursor.fetchall()
+        return [dict(zip(columns, row)) for row in rows]
     except:
-        return DataFrame()
+        return []
 
 def get_reviews(review_ids=[], columns=REVIEW_COLUMNS):
-    return get_content(table_name='review', ids=review_ids, columns=columns)
+    reviews = get_content(table_name='review', ids=review_ids, columns=columns)
+    return DataFrame(reviews)
 
-def get_ingredients(ingredient_ids=[], columns=INGREDIENT_COLUMNS):
-    return get_content(table_name='ingredient', ids=ingredient_ids, columns=columns)
+def get_ingredients(ingredient_ids=[], columns=['name']):
+    ingredients = get_content(table_name='ingredient', ids=ingredient_ids, columns=columns)
+    return [ingredient['name'] for ingredient in ingredients]
 
-def get_tags(tag_ids=[], columns=TAG_COLUMNS):
-    return get_content(table_name='tag', ids=tag_ids, columns=columns)
+def get_tags(tag_ids=[], columns=['name']):
+    tags = get_content(table_name='tag', ids=tag_ids, columns=columns)
+    return [tag['name'] for tag in tags]
 
 # endregion Shared

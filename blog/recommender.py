@@ -4,18 +4,9 @@ from surprise import Dataset, Reader, SVD, SVDpp
 
 
 class RecipeRecommender:
-    def __init__(
-        self, n_factors=20, n_epochs=20, lr_all=0.007, reg_all=0.02,
-        lr_bu=None, lr_bi=None, lr_pu=None, lr_qi=None, lr_yj=None,
-        reg_bu=None, reg_bi=None, reg_pu=None, reg_qi=None, reg_yj=None
-    ):
-        # self.model = SVDpp(
-        #     n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all,
-        #     lr_bu=lr_bu, lr_bi=lr_bi, lr_pu=lr_pu, lr_qi=lr_qi, lr_yj=lr_yj,
-        #     reg_bu=reg_bu, reg_bi=reg_bi, reg_pu=reg_pu, reg_qi=reg_qi, reg_yj=reg_yj,
-        #     random_state=2020
-        # )
-        self.model = SVD(n_factors=n_factors, n_epochs=n_epochs, random_state=2020)
+    def __init__(self, n_factors=20, n_epochs=20, lr_all=0.007, reg_all=0.02):
+        # self.model = SVDpp(n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all, random_state=2020)
+        self.model = SVD(random_state=2020)
 
     def fit(self, reviews):
         reader = Reader(rating_scale=(1, 5))
@@ -26,14 +17,10 @@ class RecipeRecommender:
 
     def predict(self, reviews):
         self.predictions = self.model.test(self.testset)
-        has_rated = (reviews.user_id == 1).any()
-        if has_rated:
-            top_n_recipes_ids = RecipeRecommender.get_top_n(self.predictions)
-            # TODO: Refactor this!
-            recommended_recipe_ids = np.array(top_n_recipes_ids[1], dtype=int)[:, 0].tolist()
-            return recommended_recipe_ids
-        else:
-            return []
+        top_n_recipes_ids = RecipeRecommender.get_top_n(self.predictions)
+        # TODO: Refactor this!
+        recommended_recipe_ids = np.array(top_n_recipes_ids[1], dtype=int)[:, 0].tolist()
+        return recommended_recipe_ids
 
     @staticmethod
     def get_top_n(predictions, n=20):

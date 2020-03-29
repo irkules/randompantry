@@ -80,13 +80,13 @@ def insert_review(rating, review, recipe_id, user_id):
 #         nrb.fit(reviews)
 #         similar_rating_ids = nrb.predict(recipe_id)
 #         # Ingredients
-#         nr.fit(recipes.ingredient_ids)
+#         nr.fit(recipes['ingredient_ids'])
 #         similar_ingredient_ids = nr.predict(recipe_id, recipe_ids)
 #         # Tags
-#         nr.fit(recipes.tag_ids)
+#         nr.fit(recipes['tag_ids'])
 #         similar_tag_ids = nr.predict(recipe_id, recipe_ids)
 #         # Nutrition
-#         nrf.fit(recipes.nutrition)
+#         nrf.fit(recipes['nutrition'])
 #         similar_nutrition_ids = nrf.predict(recipe_id, recipe_ids)
 #         # Cache ids in db
 #         db.update_recipe_cache(
