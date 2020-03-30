@@ -233,6 +233,54 @@ def get_make_again(columns=['id', 'name', 'description', 'img_url', 'rating'], n
 
 # region Recipe Details Page
 
+def get_recipe(recipe_id):
+    query = f'''
+        SELECT
+            recipe.id, recipe.name, recipe.date, recipe.description, recipe.img_url, recipe.steps, recipe.nutrition,
+            review.rating, rating.has_rated, ARRAY_AGG(DISTINCT ingredients) as ingredients, ARRAY_AGG(DISTINCT tags) as tags,
+            recipe.similar_rating, recipe.similar_ingredients, recipe.similar_tags, recipe.similar_nutrition
+        FROM (
+            SELECT *
+            FROM blog_recipe
+            WHERE id = {recipe_id}
+        ) as recipe
+        LEFT JOIN (
+            SELECT recipe_id, rating AS has_rated
+            FROM blog_review
+            WHERE user_id = 1 AND recipe_id = {recipe_id}
+        ) as rating
+        ON rating.recipe_id = recipe.id
+        LEFT JOIN (
+            SELECT recipe_id, AVG(rating) AS rating
+            FROM blog_review
+            WHERE recipe_id = {recipe_id}
+            GROUP BY recipe_id
+        ) AS review
+        ON review.recipe_id = recipe.id
+        LEFT JOIN (
+            SELECT id, name as ingredients
+            FROM blog_ingredient
+        ) as ingredient
+        ON ingredient.id = ANY(recipe.ingredient_ids)
+        LEFT JOIN (
+            SELECT id, name as tags
+            FROM blog_tag
+        ) as tag
+        ON tag.id = ANY(recipe.tag_ids)
+        GROUP BY
+            recipe.id, recipe.name, recipe.date, recipe.description, recipe.img_url, recipe.steps, recipe.nutrition,
+            review.rating, rating.has_rated,
+            recipe.similar_rating, recipe.similar_ingredients, recipe.similar_tags, recipe.similar_nutrition
+        '''
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns = [col[0] for col in cursor.description]
+            row = cursor.fetchone()
+        return dict(zip(columns, row))
+    except:
+        return dict()
+
 def update_recipe_cache(recipe_id, columns, values):
     """
     Update similar recipe ids in blog_recipe table.
@@ -282,10 +330,12 @@ def insert_review(rating, review, recipe_id, user_id):
 def get_recipes(recipe_ids=None, columns=RECIPE_COLUMNS):
     if recipe_ids == []:
         return []
+    # TODO: Refactor Query
     query = f'''
         SELECT {SEPERATOR.join(columns)}, rating
         FROM (
-            SELECT * FROM blog_recipe
+            SELECT *
+            FROM blog_recipe
         ) AS recipe_table
         LEFT JOIN
         (
@@ -311,13 +361,13 @@ def get_recipes(recipe_ids=None, columns=RECIPE_COLUMNS):
     except:
         return []
 
-def get_content(table_name, ids, columns):
+def get_reviews(review_ids=None, columns=REVIEW_COLUMNS):
     query = f'''
         SELECT {SEPERATOR.join(columns)}
-        FROM blog_{table_name}
+        FROM blog_review
         '''
-    if len(ids) > 0:
-        ids_str = SEPERATOR.join(str(id) for id in ids)
+    if review_ids:
+        ids_str = SEPERATOR.join(str(id) for id in review_ids)
         query += f'''
             WHERE id IN ({ids_str})
             ORDER BY array_position(ARRAY[{ids_str}]::integer[], id)
@@ -327,20 +377,9 @@ def get_content(table_name, ids, columns):
             cursor.execute(query)
             columns = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
-        return [dict(zip(columns, row)) for row in rows]
+            result = [dict(zip(columns, row)) for row in rows]
+        return DataFrame(result)
     except:
-        return []
-
-def get_reviews(review_ids=[], columns=REVIEW_COLUMNS):
-    reviews = get_content(table_name='review', ids=review_ids, columns=columns)
-    return DataFrame(reviews)
-
-def get_ingredients(ingredient_ids=[], columns=['name']):
-    ingredients = get_content(table_name='ingredient', ids=ingredient_ids, columns=columns)
-    return [ingredient['name'] for ingredient in ingredients]
-
-def get_tags(tag_ids=[], columns=['name']):
-    tags = get_content(table_name='tag', ids=tag_ids, columns=columns)
-    return [tag['name'] for tag in tags]
+        return DataFrame()
 
 # endregion Shared

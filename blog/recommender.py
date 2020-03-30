@@ -1,4 +1,3 @@
-import numpy as np
 from collections import defaultdict
 from surprise import Dataset, Reader, SVD, SVDpp
 
@@ -15,15 +14,13 @@ class RecipeRecommender:
         self.testset = self.trainset.build_anti_testset()
         return self.model.fit(self.trainset)
 
-    def predict(self, reviews):
+    def predict(self, reviews, n=20):
         self.predictions = self.model.test(self.testset)
-        top_n_recipes_ids = RecipeRecommender.get_top_n(self.predictions)
-        # TODO: Refactor this!
-        recommended_recipe_ids = np.array(top_n_recipes_ids[1], dtype=int)[:, 0].tolist()
-        return recommended_recipe_ids
+        recommended_dict = RecipeRecommender.get_top_n(self.predictions, n=n)
+        return [id_tuple[0] for id_tuple in recommended_dict[1]]
 
     @staticmethod
-    def get_top_n(predictions, n=20):
+    def get_top_n(predictions, n):
         top_n = defaultdict(list)
         for uid, iid, _, est, _ in predictions:
             top_n[uid].append((iid, est))

@@ -1,9 +1,7 @@
 from blog import db, tasks
 from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
-from blog.recommender import RecipeRecommender
 from blog.redis import RECOMMENDED_KEY, FAVOURITES_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY
 from django.core.cache import cache
-from numpy import logical_and
 from randompantry.settings import USE_CELERY
 from statistics import mean
 
@@ -87,19 +85,12 @@ class HomeContent(Content):
 class RecipeDetailContent(Content):
     @staticmethod
     def get_recipe_detail_context(recipe_id):
-        # TODO: Make db method to retrieve recipe info
-        recipes = RecipeDetailContent.get_recipes(all_columns=True)
-        # Current Recipe Attributes
-        matched_recipes = [recipe for recipe in recipes if recipe['id'] == recipe_id]
-        if not matched_recipes:
-            return None
-        current_recipe = matched_recipes[0]
+        # Current Recipe
+        current_recipe = db.get_recipe(recipe_id)
+        if not current_recipe:
+            return {}
         current_recipe['description'] = current_recipe['description'].capitalize()
-        reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
-        current_recipe['has_rated'] = len(reviews[logical_and(reviews.user_id == 1, reviews.recipe_id == recipe_id)]) != 0
-        ingredients = db.get_ingredients(ingredient_ids=current_recipe['ingredient_ids'])
-        current_recipe['ingredients'] = [ingredient.capitalize() for ingredient in ingredients]
-        current_recipe['tags'] = db.get_tags(tag_ids=current_recipe['tag_ids'])
+        current_recipe['ingredients'] = [ingredient.capitalize() for ingredient in current_recipe['ingredients']]
         steps = []
         for step in current_recipe['steps']:
             if step[0] == "'":
@@ -108,6 +99,9 @@ class RecipeDetailContent(Content):
                 step = step[:-1]
             steps.append(step.capitalize())
         current_recipe['steps'] = steps
+        rating = round(current_recipe['rating'])
+        current_recipe['rating'] = range(rating)
+        current_recipe['rating_null'] = range(5 - rating)
         # Similar Recipes
         similar_rating_ids = current_recipe['similar_rating']
         similar_ingredient_ids = current_recipe['similar_ingredients']
@@ -115,6 +109,7 @@ class RecipeDetailContent(Content):
         similar_nutrition_ids = current_recipe['similar_nutrition']
         has_cached_ids = similar_rating_ids and similar_ingredient_ids and similar_tag_ids and similar_nutrition_ids
         if not has_cached_ids:
+            recipes = RecipeDetailContent.get_recipes(all_columns=True)
             recipe_ids = []
             ingredient_ids = []
             tag_ids = []
@@ -124,6 +119,7 @@ class RecipeDetailContent(Content):
                 ingredient_ids.append(recipe['ingredient_ids'])
                 tag_ids.append(recipe['tag_ids'])
                 nutrition.append(recipe['nutrition'])
+            reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
             similar_rating_ids = RecipeDetailContent.get_similar_rating_ids(recipe_id, reviews)
             similar_ingredient_ids = RecipeDetailContent.get_similar_ids(recipe_id, recipe_ids, ingredient_ids)
             similar_tag_ids = RecipeDetailContent.get_similar_ids(recipe_id, recipe_ids, tag_ids)
@@ -138,16 +134,6 @@ class RecipeDetailContent(Content):
         current_recipe['similar_tags'] = RecipeDetailContent.get_recipes(similar_tag_ids)
         current_recipe['similar_nutrition'] = RecipeDetailContent.get_recipes(similar_nutrition_ids)
         return current_recipe
-
-    @staticmethod
-    def get_recipe_rating(recipe_id, reviews):
-        reviews = reviews[reviews.recipe_id == recipe_id]
-        if len(reviews):
-            mean_rating = round(mean(reviews.rating))
-            rating = range(mean_rating)
-            rating_null = range(5 - mean_rating)
-            return rating, rating_null
-        return [], []
 
     @staticmethod
     def get_similar_rating_ids(recipe_id, reviews):
