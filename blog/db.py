@@ -1,6 +1,5 @@
 from blog.models import Home, Ingredient, Recipe, Review, Tag
 from django.db import connection
-from pandas import DataFrame
 
 
 # Constants
@@ -377,9 +376,8 @@ def get_reviews(review_ids=None, columns=REVIEW_COLUMNS):
             cursor.execute(query)
             columns = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
-            result = [dict(zip(columns, row)) for row in rows]
-        return DataFrame(result)
+        return [dict(zip(columns, row)) for row in rows]
     except:
-        return DataFrame()
+        return []
 
 # endregion Shared

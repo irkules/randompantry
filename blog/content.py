@@ -1,5 +1,5 @@
 from blog import db, tasks
-from blog.nearest_recipes import NearestRecipes, NearestRecipesBaseline
+from blog.modeling import NearestRecipes, NearestRecipesBaseline
 from blog.redis import RECOMMENDED_KEY, FAVOURITES_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY
 from django.core.cache import cache
 from randompantry.settings import USE_CELERY
@@ -137,8 +137,6 @@ class RecipeDetailContent(Content):
 
     @staticmethod
     def get_similar_rating_ids(recipe_id, reviews):
-        if (reviews.recipe_id != recipe_id).all():
-            return []
         model = NearestRecipesBaseline(k=40)
         model.fit(reviews)
         return model.predict(recipe_id)
@@ -151,8 +149,8 @@ class RecipeDetailContent(Content):
 
     @staticmethod
     def add_review(rating, review, recipe_id, user_id):
-        cache.delete_many([RECOMMENDED_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY])
         if USE_CELERY:
             tasks.insert_review.delay(rating, review, recipe_id, user_id)
         else:
             tasks.insert_review(rating, review, recipe_id, user_id)
+        cache.delete_many([RECOMMENDED_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY])
