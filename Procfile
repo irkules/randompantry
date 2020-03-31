@@ -1,1 +1,1 @@
-web: gunicorn randompantry.wsgi
+web: honcho start -f ProcfileHoncho

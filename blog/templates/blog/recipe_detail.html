@@ -8,7 +8,7 @@
                     <img src="https://img.icons8.com/ios/100/000000/cooking-book.png">
                 </div>
                 
-                <h1 class="font-weight-normal recipe-detail-title pt-3">{{ recipe.name }}</h1>
+                <h1 class="font-weight-normal recipe-detail-title pt-3">{{ name }}</h1>
                 
                 <div class="row recipe-detail-section pt-3">
                     <div class="col">
@@ -21,14 +21,14 @@
                         <p class="lead">Recipe by <a class="mr-2" href="#">{{ author }}</a></p>
                     </div>
                     <div class="col">
-                        <p class="lead mt-3" style="text-align: right;">{{ recipe.date|date:"M d, Y" }}</p>
+                        <p class="lead mt-3" style="text-align: right;">{{ date|date:"M d, Y" }}</p>
                     </div>
                 </div>
                 
-                <img class="recipe-detail-img pt-2" src="{{ recipe.img_url }}">
+                <img class="recipe-detail-img pt-2" src="{{ img_url }}">
                 
                 <div class="recipe-detail-section">
-                    <p class="recipe-detail-desc pt-2">{{ recipe.description }}</p>
+                    <p class="recipe-detail-desc pt-2">{{ description }}</p>
                 </div>
                 
                 <hr style="border-top: 3px solid black;margin: 25px;">
@@ -46,31 +46,31 @@
                         <h2>Nutrition</h2>
                         <div class="block recipe-detail-nutr">
                             <label>Calories (Amount per Serving):</label> 
-                            <span>{{ recipe.nutrition.0 }}</span> 
+                            <span>{{ nutrition.0 }}</span> 
                         </div>
                         <div class="block recipe-detail-nutr">
                             <label>Total Fat (% Daily Value):</label> 
-                            <span>{{ recipe.nutrition.1 }}</span>
+                            <span>{{ nutrition.1 }}</span>
                         </div>
                         <div class="block recipe-detail-nutr">
                             <label>Sugar (% Daily Value):</label> 
-                            <span>{{ recipe.nutrition.2 }}</span>
+                            <span>{{ nutrition.2 }}</span>
                         </div>
                         <div class="block recipe-detail-nutr">
                             <label>Sodium (% Daily Value):</label> 
-                            <span>{{ recipe.nutrition.3 }}</span>
+                            <span>{{ nutrition.3 }}</span>
                         </div>
                         <div class="block recipe-detail-nutr">
                             <label>Protein (% Daily Value):</label> 
-                            <span>{{ recipe.nutrition.4 }}</span>
+                            <span>{{ nutrition.4 }}</span>
                         </div>
                         <div class="block recipe-detail-nutr">
                             <label>Saturated Fat (% Daily Value):</label> 
-                            <span>{{ recipe.nutrition.5 }}</span>
+                            <span>{{ nutrition.5 }}</span>
                         </div>
                         <div class="block recipe-detail-nutr">
                             <label>Total Carbohydrate (% Daily Value):</label> 
-                            <span>{{ recipe.nutrition.6 }}</span>
+                            <span>{{ nutrition.6 }}</span>
                         </div>
                     </div>             
                 </div>
@@ -78,7 +78,7 @@
                 <div class="recipe-detail-section">
                     <h2>Steps</h2>
                     <ul class="">
-                        {% for step in recipe.steps %}
+                        {% for step in steps %}
                             <li class="">{{ step }}</li>
                         {% endfor %}
                     </ul>
@@ -91,8 +91,7 @@
                     {% endfor %}
                 </div>
                 
-                <!-- TODO: Allow user to edit review -->
-                {% if user.is_authenticated and recipe.user != user and not has_rated %}
+                {% if not has_rated %}
                 <div class="recipe-detail-section">
                     <form method = "POST">
                         {% csrf_token %}
@@ -105,14 +104,6 @@
                         </div>
                     </form>
                 </div>
-                {% endif %}
-
-                {% if recipe.user == user %}
-                    <div>
-                        <!-- edit recipe button hidden for now, until we can make the form-->
-                        <!-- <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'recipe-update' recipe.id %}"> Update </a> -->
-                        <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'recipe-delete' recipe.id %}"> Delete </a>
-                    </div>
                 {% endif %}
 
                 <!-- Similar Recipes -->
@@ -180,7 +171,7 @@
                 {% endif %}
 
                 <!-- Similar Recipes by Ingredients -->
-                {% if similar_ingr %}
+                {% if similar_ingredients %}
                     <div class="container-fluid titleCard">
                         <h2 class="rowHeader text-dark">
                             <span class="rowTitle">
@@ -188,7 +179,7 @@
                             </span>
                         </h2>
                         <ul id="similarIngrSlider">
-                            {% for rec in similar_ingr %}
+                            {% for rec in similar_ingredients %}
                                 <li>
                                     <div class="hovereffect">
                                         <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
@@ -209,7 +200,7 @@
                         </ul>
                     </div>
                     <!-- Similar Recipes by Ingredients Modals -->
-                    {% for rec in similar_ingr %}
+                    {% for rec in similar_ingredients %}
                         <div class="modal fade" id="modal_{{ rec.id }}">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">            
@@ -304,7 +295,7 @@
                 {% endif %}
 
                 <!-- Similar Recipes by Nutrition -->
-                {% if similar_nutr %}
+                {% if similar_nutrition %}
                     <div class="container-fluid titleCard">
                         <h2 class="rowHeader text-dark">
                             <span class="rowTitle">
@@ -312,7 +303,7 @@
                             </span>
                         </h2>
                         <ul id="similarNutrSlider">
-                            {% for rec in similar_nutr %}
+                            {% for rec in similar_nutrition %}
                                 <li>
                                     <div class="hovereffect">
                                         <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
@@ -333,7 +324,7 @@
                         </ul>
                     </div>
                     <!-- Similar Recipes by Nutrition Modals -->
-                    {% for rec in similar_nutr %}
+                    {% for rec in similar_nutrition %}
                         <div class="modal fade" id="modal_{{ rec.id }}">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">            
