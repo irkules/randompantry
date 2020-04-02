@@ -2,14 +2,49 @@ from collections import defaultdict
 from pandas import DataFrame
 from sklearn.decomposition import TruncatedSVD
 from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import MultiLabelBinarizer
-from surprise import Dataset, KNNBaseline, Reader, SVD#, SVDpp
+from sklearn.neural_network import MLPRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import MultiLabelBinarizer, LabelEncoder, StandardScaler
+from surprise import Dataset, KNNBaseline, Reader, SVDpp
 
+
+class RecipeNet:
+    def __init__(self):
+        self.model = make_pipeline(
+            StandardScaler(),
+            MLPRegressor(
+                hidden_layer_sizes=(100, 100),
+                activation='relu',
+                solver='sgd',
+                alpha=0.0001,
+                max_iter=200,
+                random_state=2020,
+                verbose=True,
+                momentum=0.9
+            )
+        )
+        self.recipe_le = LabelEncoder()
+
+    def fit(self, reviews):
+        reviews = DataFrame(reviews)
+        reviews['user_id'] = LabelEncoder().fit_transform(reviews['user_id'].values)
+        reviews['recipe_id'] = self.recipe_le.fit_transform(reviews['recipe_id'].values)
+        exclude_recipe_ids = reviews.loc[reviews.user_id == 0, 'recipe_id'].values
+        self.encoded_ids = [id for id in reviews['recipe_id'].unique() if id not in exclude_recipe_ids]
+        return self.model.fit(
+            X=reviews[['user_id', 'recipe_id']].values, 
+            y=reviews['rating'].values
+        )
+
+    def predict(self, n=20):
+        X_test = DataFrame({ 'user_id': [1] * len(self.encoded_ids), 'recipe_id': self.encoded_ids }).values
+        y_pred = self.model.predict(X_test)
+        pred_encoded_ids = (-y_pred).argsort()[:n]
+        return self.recipe_le.inverse_transform(pred_encoded_ids)
 
 class RecipeRecommender:
     def __init__(self, n_factors=20, n_epochs=20, lr_all=0.007, reg_all=0.02):
-        # self.model = SVDpp(n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all, random_state=2020)
-        self.model = SVD(random_state=2020)
+        self.model = SVDpp(n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all, random_state=2020)
 
     def fit(self, reviews):
         # SurPRISE supports only pandas DataFrame or folds as data input

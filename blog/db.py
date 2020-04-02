@@ -327,9 +327,9 @@ def insert_review(rating, review, recipe_id, user_id):
 # region Shared
 
 def get_recipes(recipe_ids=None, columns=RECIPE_COLUMNS):
+    # TODO: Refactor this!
     if recipe_ids == []:
         return []
-    # TODO: Refactor Query
     query = f'''
         SELECT {SEPERATOR.join(columns)}, rating
         FROM (
@@ -345,7 +345,7 @@ def get_recipes(recipe_ids=None, columns=RECIPE_COLUMNS):
         ) AS review_table
         ON review_table.recipe_id = recipe_table.id
         '''
-    if recipe_ids:
+    if recipe_ids is not None:
         recipe_ids_str = SEPERATOR.join(str(id) for id in recipe_ids)
         query += f'''
             WHERE id IN ({recipe_ids_str})
@@ -365,7 +365,7 @@ def get_reviews(review_ids=None, columns=REVIEW_COLUMNS):
         SELECT {SEPERATOR.join(columns)}
         FROM blog_review
         '''
-    if review_ids:
+    if review_ids is not None:
         ids_str = SEPERATOR.join(str(id) for id in review_ids)
         query += f'''
             WHERE id IN ({ids_str})
