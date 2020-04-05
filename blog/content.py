@@ -26,7 +26,7 @@ class HomeContent(Content):
         home = {
             'recipes_list': [
                 ('Recommended (Matrix Factorization SVD)', HomeContent.get_recommended(reviews)),
-                ('Recommended (Feedforward Neural Network', HomeContent.get_recommended_mlp(reviews)),
+                ('Recommended (Feedforward Neural Network)', HomeContent.get_recommended_mlp(reviews)),
                 ('Make Again', HomeContent.get_make_again()),
                 ('Top Rated', HomeContent.get_top_rated())
             ]
