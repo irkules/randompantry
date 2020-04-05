@@ -1,8 +1,8 @@
 
-![randompantry](./randompantry.png)
+![randompantry](./media/randompantry.png)
 
 
-# Random Pantry, A Recipe Recommender System
+# RANDOM PANTRY, A Recipe Recommender System
 
 [![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.live)](https://randompantry.live)
 [![last-commit](https://img.shields.io/github/last-commit/irkules/randompantry)](https://github.com/irkules/randompantry/commits/master)
@@ -17,22 +17,34 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
 
 ### Rating a Recipe
 
+| Navigate to a recipe page through the popup window |  "Rate This Recipe!" is located after Tags |
+| :-------------------------: | :-------------------------: |
+| ![randompantry](./media/modal.png) | ![randompantry](./media/rate.png) |
 
 ### Getting Recommendations
+
+| Recommendations are refreshed automatically whenever a new recipe is rated |
+| :-------------------------: |
+| ![randompantry](./media/recommendations.png) |
 
 
 ### Getting Similar Recipes
 
+| Navigate to a recipe page | Similar Recipes can be found at the bottom |
+| :------: | :----: |
+| ![randompantry](./media/recipe-detail.png) | ![randompantry](./media/similar-recipes.png) |
+
+
 
 ## Technologies
 ### Languages & Frameworks
-* [Django](https://www.djangoproject.com/)
 * [Python](https://www.python.org)
+* [Django](https://www.djangoproject.com/) - Web Framework
 
 ### Machine Learning
-* [pandas](https://pandas.pydata.org/)
 * [scikit-learn](https://scikit-learn.org) - Truncated SVD, K-Nearest Neighbours, and Multilayer Perceptron (Artificial Neural Network)
-* [SurPRISE](http://surpriselib.com/) - Matrix Factorization using SVD
+* [pandas](https://pandas.pydata.org/)
+* [SurPRISE](http://surpriselib.com/) - Matrix Factorization algorithm (SVD)
 
 ### Database
 * [PostgreSQL](https://www.postgresql.org/)
