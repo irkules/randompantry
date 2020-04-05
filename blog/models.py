@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.contrib.postgres.fields import ArrayField
 
+
 class Home(Model):
     recommended = ArrayField(PositiveIntegerField(), null=True)
     recommended_mlp = ArrayField(PositiveIntegerField(), null=True)

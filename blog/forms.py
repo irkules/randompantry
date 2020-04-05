@@ -1,5 +1,6 @@
 from django.forms import Form, ChoiceField
 
+
 class UserReviewForm(Form):
     rating = ChoiceField(
         label='Rating',
