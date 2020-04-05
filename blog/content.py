@@ -174,4 +174,4 @@ class RecipeDetailContent(Content):
             tasks.insert_review.delay(rating, recipe_id, user_id)
         else:
             tasks.insert_review(rating, recipe_id, user_id)
-        cache.delete_many([RECOMMENDED_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY])
+        cache.delete_many([RECOMMENDED_KEY, RECOMMENDED_MLP_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY])
