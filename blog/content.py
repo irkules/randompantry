@@ -22,12 +22,15 @@ class Content:
 class HomeContent(Content):
     @staticmethod
     def get_home_context():
-        home = dict()
-        home['make_again'] = HomeContent.get_make_again()
-        home['top_rated'] = HomeContent.get_top_rated()
         reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
-        home['recommended'] = HomeContent.get_recommended(reviews)
-        home['recommended_mlp'] = HomeContent.get_recommended_mlp(reviews)
+        home = {
+            'recipes_list': [
+                ('Recommended (Matrix Factorization SVD)', HomeContent.get_recommended(reviews)),
+                ('Recommended (Feedforward Neural Network', HomeContent.get_recommended_mlp(reviews)),
+                ('Make Again', HomeContent.get_make_again()),
+                ('Top Rated', HomeContent.get_top_rated())
+            ]
+        }
         return home
 
     @staticmethod
@@ -145,10 +148,12 @@ class RecipeDetailContent(Content):
                 columns=['similar_rating', 'similar_ingredients', 'similar_tags', 'similar_nutrition'],
                 values=[similar_rating_ids, similar_ingredient_ids, similar_tag_ids, similar_rating_ids]
             )
-        current_recipe['similar_rating'] = RecipeDetailContent.get_recipes(similar_rating_ids)
-        current_recipe['similar_ingredients'] = RecipeDetailContent.get_recipes(similar_ingredient_ids)
-        current_recipe['similar_tags'] = RecipeDetailContent.get_recipes(similar_tag_ids)
-        current_recipe['similar_nutrition'] = RecipeDetailContent.get_recipes(similar_nutrition_ids)
+        current_recipe['similar_recipes_list'] = [
+            ('Rating', RecipeDetailContent.get_recipes(similar_rating_ids)),
+            ('Ingredients', RecipeDetailContent.get_recipes(similar_ingredient_ids)),
+            ('Tags', RecipeDetailContent.get_recipes(similar_tag_ids)),
+            ('Nutrition', RecipeDetailContent.get_recipes(similar_nutrition_ids))
+        ]
         return current_recipe
 
     @staticmethod

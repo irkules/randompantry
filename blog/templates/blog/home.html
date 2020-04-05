@@ -1,222 +1,70 @@
 {% extends "blog/base.html" %}
 {% load static %}
 {% block content %}
-{% if recommended %}
 <div class="loading-animation">
     <img src="https://cdn.dribbble.com/users/50644/screenshots/3502487/recipes.gif">
 </div>
-<!-- Focus -->
-<div class="recipe-slider-focus">
-    {% for recipe in recommended %}
-    <div><img src="{{ recipe.img_url }}"/></div>
-    {% endfor %}
-</div>
-<!-- Sliders -->
+{% if recipes_list %}
+    <!-- Focus -->
+    <div class="recipe-slider-focus">
+        {% for recipe in recipes_list.0.1 %}
+        <div>
+            <img src="{{ recipe.img_url }}"/>
+        </div>
+        {% endfor %}
+    </div>
+    <!-- Sliders -->
+    <div class="container-fluid recipe-slider-home">
+        {% for kind, recipes in recipes_list %}
+            <div class="titleCard">
+                <div class="rowTitle">{{ kind }}</div>
+                <div class="recipe-slider-recommended">
+                    {% for recipe in recipes %}
+                    <div class="hovereffect">
+                        <img height="209.3" src="{{ recipe.img_url }}"/>
+                        <a href="#modal_{{ recipe.id }}" data-toggle="modal">
+                            <div class="overlay star-center">
+                                <h2>{{ recipe.name }}</h2>
+                                {% for _ in recipe.rating %}
+                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in recipe.rating_null %}
+                                <span class="fa fa-star star-center"></span>    
+                                {% endfor %}
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% for recipe in recipes %}
+            <div class="modal fade" id="modal_{{ recipe.id }}">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title">{{ recipe.name }}</h1>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <img width="372.45" height="209.3" src="{{ recipe.img_url }}"/>
+                            <div>
+                                {% for _ in recipe.rating %}
+                                <span class="fa fa-star star-center recipe-detail-checked"></span>
+                                {% endfor %}
+                                {% for _ in recipe.rating_null %}
+                                <span class="fa fa-star star-center"></span>
+                                {% endfor %}
+                            </div>
+                            <p>{{ recipe.description }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{% url 'recipe-detail' recipe.id %}">View recipe</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
 {% endif %}
-<div class="container-fluid recipe-slider-home">
-    <!-- Recommended (Matrix Factorization SVD) -->
-    {% if recommended %}
-    <div class="titleCard">
-        <div class="rowTitle">Recommended (Matrix Factorization SVD)</div>
-        <div class="recipe-slider-recommended">
-            {% for recipe in recommended %}
-            <div class="hovereffect">
-                <img height="209.3" src="{{ recipe.img_url }}"/>
-                <a href="#modal_{{ recipe.id }}" data-toggle="modal">
-                    <div class="overlay star-center">
-                        <h2>{{ recipe.name }}</h2>
-                        {% for _ in recipe.rating %}
-                            <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                            <span class="fa fa-star star-center"></span>    
-                        {% endfor %}
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% for recipe in recommended %}
-    <div class="modal fade" id="modal_{{ recipe.id }}">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title">{{ recipe.name }}</h1>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <img class="" width="372.45" height="209.3" src="{{ recipe.img_url }}"/>
-                    <div>
-                        {% for _ in recipe.rating %}
-                        <span class="fa fa-star star-center recipe-detail-checked"></span>
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                        <span class="fa fa-star star-center"></span>
-                        {% endfor %}
-                    </div>
-                    <p>{{ recipe.description }}</p>
-                </div>
-                <div class="modal-footer">
-                    <a href="{% url 'recipe-detail' recipe.id %}">View recipe</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-    <!-- Recommended (Feedforward Neural Network) -->
-    {% if recommended_mlp %}
-    <div class="titleCard">
-        <div class="rowTitle">Recommended (Feedforward Neural Network)</div>
-        <div class="recipe-slider">
-            {% for recipe in recommended_mlp %}
-            <div class="hovereffect">
-                <img height="209.3" src="{{ recipe.img_url }}"/>
-                <a href="#modal_{{ recipe.id }}" data-toggle="modal">
-                    <div class="overlay star-center">
-                        <h2>{{ recipe.name }}</h2>
-                        {% for _ in recipe.rating %}
-                            <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                            <span class="fa fa-star star-center"></span>    
-                        {% endfor %}
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% for recipe in recommended_mlp %}
-    <div class="modal fade" id="modal_{{ recipe.id }}">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title">{{ recipe.name }}</h1>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <img class="" width="372.45" height="209.3" src="{{ recipe.img_url }}"/>
-                    <div>
-                        {% for _ in recipe.rating %}
-                        <span class="fa fa-star star-center recipe-detail-checked"></span>
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                        <span class="fa fa-star star-center"></span>
-                        {% endfor %}
-                    </div>
-                    <p>{{ recipe.description }}</p>
-                </div>
-                <div class="modal-footer">
-                    <a href="{% url 'recipe-detail' recipe.id %}">View recipe</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-    <!-- Make Again -->
-    {% if make_again %}
-    <div class="titleCard">
-        <div class="rowTitle">Make Again</div>
-        <div class="recipe-slider">
-            {% for recipe in make_again %}
-            <div class="hovereffect">
-                <img height="209.3" src="{{ recipe.img_url }}"/>
-                <a href="#modal_{{ recipe.id }}" data-toggle="modal">
-                    <div class="overlay star-center">
-                        <h2>{{ recipe.name }}</h2>
-                        {% for _ in recipe.rating %}
-                            <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                            <span class="fa fa-star star-center"></span>    
-                        {% endfor %}
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% for recipe in make_again %}
-    <div class="modal fade" id="modal_{{ recipe.id }}">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title">{{ recipe.name }}</h1>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <img class="" width="372.45" height="209.3" src="{{ recipe.img_url }}"/>
-                    <div>
-                        {% for _ in recipe.rating %}
-                        <span class="fa fa-star star-center recipe-detail-checked"></span>
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                        <span class="fa fa-star star-center"></span>
-                        {% endfor %}
-                    </div>
-                    <p>{{ recipe.description }}</p>
-                </div>
-                <div class="modal-footer">
-                    <a href="{% url 'recipe-detail' recipe.id %}">View recipe</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-    <!-- Top Rated -->
-    {% if top_rated %}
-    <div class="titleCard">
-        <div class="rowTitle">Top Rated</div>
-        <div class="recipe-slider">
-            {% for recipe in top_rated %}
-            <div class="hovereffect">
-                <img height="209.3" src="{{ recipe.img_url }}"/>
-                <a href="#modal_{{ recipe.id }}" data-toggle="modal">
-                    <div class="overlay star-center">
-                        <h2>{{ recipe.name }}</h2>
-                        {% for _ in recipe.rating %}
-                            <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                            <span class="fa fa-star star-center"></span>    
-                        {% endfor %}
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% for recipe in top_rated %}
-    <div class="modal fade" id="modal_{{ recipe.id }}">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title">{{ recipe.name }}</h1>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <img class="" width="372.45" height="209.3" src="{{ recipe.img_url }}"/>
-                    <div>
-                        {% for _ in recipe.rating %}
-                        <span class="fa fa-star star-center recipe-detail-checked"></span>
-                        {% endfor %}
-                        {% for _ in recipe.rating_null %}
-                        <span class="fa fa-star star-center"></span>
-                        {% endfor %}
-                    </div>
-                    <p>{{ recipe.description }}</p>
-                </div>
-                <div class="modal-footer">
-                    <a href="{% url 'recipe-detail' recipe.id %}">View recipe</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-</div>
 {% endblock content %}
