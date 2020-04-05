@@ -28,9 +28,10 @@ class RecipeNet:
         )
 
     def predict(self, n=20):
-        X_test = DataFrame({ 'user_id': [1] * len(self.encoded_ids), 'recipe_id': self.encoded_ids }).values
+        X_test = DataFrame({ 'user_id': [0] * len(self.encoded_ids), 'recipe_id': self.encoded_ids }).values
         y_pred = self.model.predict(X_test)
-        pred_encoded_ids = (-y_pred).argsort()[:n]
+        pred_order = (-y_pred).argsort()[:n]
+        pred_encoded_ids = [self.encoded_ids[i] for i in pred_order]
         pred_ids = self.recipe_le.inverse_transform(pred_encoded_ids).tolist()
         return pred_ids
 
