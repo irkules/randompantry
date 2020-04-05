@@ -1,12 +1,59 @@
 {% extends "blog/base.html" %}
 {% block content %}
-    <div class="container-fluid, text-info, rp-about" style="text-align: left;">
-        <h1 style="margin-top: 40px; text-align: left;">  ABOUT </h1>
+<div class="rp-about-img">
+    <img src="https://github.com/irkules/randompantry/raw/2.0/staticfiles/img/recipe-image-default.jpeg">
+</div>
+<div class="container rp-about-title">
+    <h1 class="font-weight-light text-center text-white display-3">About Random Pantry</h1>
+</div>
+<div class="container-fluid rp-about-content">
+    <div class="row justify-content-center mb-4">
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container mx-5">
+                <h1 class="display-5">Recommending recipes since 2019</h1>
+                <p class="lead mb-5">
+                    Random Pantry is a recipe recommender system that uses machine learning algorithms.<br/>
+                    It is designed to give you recipes that you will enjoy!<br/>
+                    Feel free to have a look around at what we have :)
+                </p>
+                <h1>Meet the Team</h1>
+                <div class="row justify-content-center">
+                    <div class="col mb-4">
+                        <a href="https://github.com/irkules" target="_blank" rel="noopener noreferrer">
+                            <div class="card border-0 shadow">
+                                <img src="https://avatars0.githubusercontent.com/u/55762386?s=400&amp;v=4" class="card-img-top">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title mb-0">irkules</h5>
+                                    <div class="card-text text-black-50">Web Developer</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col mb-4">
+                        <a href="https://github.com/deonnem" target="_blank" rel="noopener noreferrer">
+                            <div class="card border-0 shadow">
+                                <img src="https://avatars3.githubusercontent.com/u/42830094?s=460&amp;v=4" class="card-img-top">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title mb-0">deonnem</h5>
+                                    <div class="card-text text-black-50">Machine Learning Developer</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col mb-4">
+                        <a href="https://github.com/irkaal" target="_blank" rel="noopener noreferrer">
+                            <div class="card border-0 shadow">
+                                <img src="https://avatars0.githubusercontent.com/u/45277297?s=460&amp;u=655fe8d05bb92cf2bad01027b304227e724a154b&amp;v=4" class="card-img-top">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title mb-0">irkaal</h5>
+                                    <div class="card-text text-black-50">Machine Learning Developer</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="rp-about">
-        <p> Random Pantry is a recipe recommender system that uses machine learning to give you recipes that 
-            you will enjoy!
-            We're still working on it, but feel free to have a look around at what we have so far :)
-        </p>
-    </div>
+</div>
 {% endblock content %}

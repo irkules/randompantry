@@ -1,361 +1,165 @@
 {% extends "blog/base.html" %}
 {% load static %}
 {% block content %}
-    <div class="container-fluid">
-        <div class="card border-0 shadow my-0">
-            <div class="card-body p-5">
-                <div class="text-center">
-                    <img src="https://img.icons8.com/ios/100/000000/cooking-book.png">
+<div class="container-fluid">
+    <div class="card border-0 shadow recipe-detail-container">
+        <div class="card-body p-5">
+            <!-- Recipe Logo -->
+            <div class="text-center">
+                <img src="https://img.icons8.com/ios/100/000000/cooking-book.png">
+            </div>
+            <!-- Recipe Name -->
+            <h1 class="font-weight-normal recipe-detail-title pt-3">{{ name }}</h1>
+            <!-- Recipe Rating -->
+            <div class="row recipe-detail-section pt-3">
+                <div class="col">
+                    {% for _ in rating %}
+                        <span class="fa fa-star star-center recipe-detail-checked"></span>    
+                    {% endfor %}
+                    {% for _ in rating_null %}
+                        <span class="fa fa-star star-center"></span>    
+                    {% endfor %}
+                    <p class="lead">Recipe by Food.com</p>
                 </div>
-                
-                <h1 class="font-weight-normal recipe-detail-title pt-3">{{ name }}</h1>
-                
-                <div class="row recipe-detail-section pt-3">
-                    <div class="col">
-                        {% for _ in rating %}
-                            <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                        {% endfor %}
-                        {% for _ in rating_null %}
-                            <span class="fa fa-star star-center"></span>    
-                        {% endfor %}
-                        <p class="lead">Recipe by <a class="mr-2" href="#">{{ author }}</a></p>
-                    </div>
-                    <div class="col">
-                        <p class="lead mt-3" style="text-align: right;">{{ date|date:"M d, Y" }}</p>
-                    </div>
+                <div class="col">
+                    <p class="lead mt-3 recipe-detail-date">{{ date|date:"M d, Y" }}</p>
                 </div>
-                
-                <img class="recipe-detail-img pt-2" src="{{ img_url }}">
-                
-                <div class="recipe-detail-section">
-                    <p class="recipe-detail-desc pt-2">{{ description }}</p>
-                </div>
-                
-                <hr style="border-top: 3px solid black;margin: 25px;">
-
-                <div class="row recipe-detail-section">
-                    <div class="col">
-                        <h2>Ingredients</h2>
-                        <ul class=" pt-2 pb-2">
-                            {% for ingr in ingredients %}
-                                <li class="">{{ ingr }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="col">
-                        <h2>Nutrition</h2>
-                        <div class="block recipe-detail-nutr">
-                            <label>Calories (Amount per Serving):</label> 
-                            <span>{{ nutrition.0 }}</span> 
-                        </div>
-                        <div class="block recipe-detail-nutr">
-                            <label>Total Fat (% Daily Value):</label> 
-                            <span>{{ nutrition.1 }}</span>
-                        </div>
-                        <div class="block recipe-detail-nutr">
-                            <label>Sugar (% Daily Value):</label> 
-                            <span>{{ nutrition.2 }}</span>
-                        </div>
-                        <div class="block recipe-detail-nutr">
-                            <label>Sodium (% Daily Value):</label> 
-                            <span>{{ nutrition.3 }}</span>
-                        </div>
-                        <div class="block recipe-detail-nutr">
-                            <label>Protein (% Daily Value):</label> 
-                            <span>{{ nutrition.4 }}</span>
-                        </div>
-                        <div class="block recipe-detail-nutr">
-                            <label>Saturated Fat (% Daily Value):</label> 
-                            <span>{{ nutrition.5 }}</span>
-                        </div>
-                        <div class="block recipe-detail-nutr">
-                            <label>Total Carbohydrate (% Daily Value):</label> 
-                            <span>{{ nutrition.6 }}</span>
-                        </div>
-                    </div>             
-                </div>
-
-                <div class="recipe-detail-section">
-                    <h2>Steps</h2>
-                    <ul class="">
-                        {% for step in steps %}
-                            <li class="">{{ step }}</li>
+            </div>
+            <!-- Recipe Image -->
+            <img class="recipe-detail-img rounded" src="{{ img_url }}">
+            <!-- Recipe Description -->
+            <div class="recipe-detail-section">
+                <p class="recipe-detail-desc pt-2">{{ description }}</p>
+            </div>            
+            <hr class="recipe-detail-divider">
+            <div class="row recipe-detail-section">
+                <!-- Recipe Ingredients -->
+                <div class="col">
+                    <h2>Ingredients</h2>
+                    <ul class="pt-2 pb-2">
+                        {% for ingr in ingredients %}
+                        <li>{{ ingr }}</li>
                         {% endfor %}
                     </ul>
                 </div>
-
-                <div class="recipe-detail-section">
-                    <h2>Tags</h2>
-                    {% for tag in tags %}
-                        <a href="#" class="badge badge-primary">{{ tag }}</a href="#">
-                    {% endfor %}
-                </div>
-                
-                {% if not has_rated %}
-                <div class="recipe-detail-section">
-                    <form method = "POST">
-                        {% csrf_token %}
-                        <fieldset class = "form-group">
-                            <legend class="border-bottom mb-4">Rate This Recipe!</legend>
-                            {{ form }}
-                        </fieldset>
-                        <div class = "form-group">
-                            <button class="btn btn-outline-info" type="submit">Submit</button>
-                        </div>
-                    </form>
-                </div>
-                {% endif %}
-
-                <!-- Similar Recipes -->
-                
-                <!-- Similar Recipes by Rating -->
-                {% if similar_rating %}
-                    <div class="container-fluid titleCard">
-                        <h2 class="rowHeader text-dark">
-                            <span class="rowTitle">
-                                <div class="row-header-title">Similar Recipes by Rating</div>
-                            </span>
-                        </h2>
-                        <ul id="similarRatingSlider">
-                            {% for rec in similar_rating %}
-                                <li>
-                                    <div class="hovereffect">
-                                        <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <a href="#modal_{{ rec.id }}" data-toggle="modal">
-                                            <div class="overlay">
-                                                <h2>{{ rec.name }}</h2>
-                                                {% for _ in rec.rating %}
-                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                                {% endfor %}
-                                                {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star star-center"></span>    
-                                                {% endfor %}
-                                            </div>
-                                        </a>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                <!-- Recipe Nutrition -->
+                <div class="col">
+                    <h2>Nutrition</h2>
+                    <div class="block recipe-detail-nutr">
+                        <label>Calories (Amount per Serving):</label> 
+                        <span>{{ nutrition.0 }}</span> 
                     </div>
-                    <!-- Similar Recipes by Rating Modals -->
-                    {% for rec in similar_rating %}
-                        <div class="modal fade" id="modal_{{ rec.id }}">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">            
-                                    <!-- Modal Header -->
-                                    <div class="modal-header">
-                                        <h1 class="modal-title recipe-detail-title">{{ rec.name }}</h1>
-                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                    </div>
-                                    <!-- Modal body -->
-                                    <div class="modal-body">
-                                        <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <div>
-                                            {% for _ in rec.rating %}
-                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                            {% endfor %}
-                                            {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star star-center"></span>    
-                                            {% endfor %}
-                                        </div>
-                                        <p class="recipe-detail-section">{{ rec.desc }}</p>
-                                    </div>
-                                    <!-- Modal footer -->
-                                    <div class="modal-footer">
-                                        <a href="{% url 'recipe-detail' rec.id %}">Click here to see full recipe</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Similar Recipes by Ingredients -->
-                {% if similar_ingredients %}
-                    <div class="container-fluid titleCard">
-                        <h2 class="rowHeader text-dark">
-                            <span class="rowTitle">
-                                <div class="row-header-title">Similar Recipes by Ingredients</div>
-                            </span>
-                        </h2>
-                        <ul id="similarIngrSlider">
-                            {% for rec in similar_ingredients %}
-                                <li>
-                                    <div class="hovereffect">
-                                        <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <a href="#modal_{{ rec.id }}" data-toggle="modal">
-                                            <div class="overlay">
-                                                <h2>{{ rec.name }}</h2>
-                                                {% for _ in rec.rating %}
-                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                                {% endfor %}
-                                                {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star star-center"></span>    
-                                                {% endfor %}
-                                            </div>
-                                        </a>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    <div class="block recipe-detail-nutr">
+                        <label>Total Fat (% Daily Value):</label> 
+                        <span>{{ nutrition.1 }}</span>
                     </div>
-                    <!-- Similar Recipes by Ingredients Modals -->
-                    {% for rec in similar_ingredients %}
-                        <div class="modal fade" id="modal_{{ rec.id }}">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">            
-                                    <!-- Modal Header -->
-                                    <div class="modal-header">
-                                        <h1 class="modal-title recipe-detail-title">{{ rec.name }}</h1>
-                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                    </div>
-                                    <!-- Modal body -->
-                                    <div class="modal-body">
-                                        <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <div>
-                                            {% for _ in rec.rating %}
-                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                            {% endfor %}
-                                            {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star star-center"></span>    
-                                            {% endfor %}
-                                        </div>
-                                        <p class="recipe-detail-section">{{ rec.desc }}</p>
-                                    </div>
-                                    <!-- Modal footer -->
-                                    <div class="modal-footer">
-                                        <a href="{% url 'recipe-detail' rec.id %}">Click here to see full recipe</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Similar Recipes by Tags -->
-                {% if similar_tags %}
-                    <div class="container-fluid titleCard">
-                        <h2 class="rowHeader text-dark">
-                            <span class="rowTitle">
-                                <div class="row-header-title">Similar Recipes by Tags</div>
-                            </span>
-                        </h2>
-                        <ul id="similarTagsSlider">
-                            {% for rec in similar_tags %}
-                                <li>
-                                    <div class="hovereffect">
-                                        <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <a href="#modal_{{ rec.id }}" data-toggle="modal">
-                                            <div class="overlay">
-                                                <h2>{{ rec.name }}</h2>
-                                                {% for _ in rec.rating %}
-                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                                {% endfor %}
-                                                {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star star-center"></span>    
-                                                {% endfor %}
-                                            </div>
-                                        </a>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    <div class="block recipe-detail-nutr">
+                        <label>Sugar (% Daily Value):</label> 
+                        <span>{{ nutrition.2 }}</span>
                     </div>
-                    <!-- Similar Recipes by Tags Modals -->
-                    {% for rec in similar_tags %}
-                        <div class="modal fade" id="modal_{{ rec.id }}">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">            
-                                    <!-- Modal Header -->
-                                    <div class="modal-header">
-                                        <h1 class="modal-title recipe-detail-title">{{ rec.name }}</h1>
-                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                    </div>
-                                    <!-- Modal body -->
-                                    <div class="modal-body">
-                                        <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <div>
-                                            {% for _ in rec.rating %}
-                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                            {% endfor %}
-                                            {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star star-center"></span>    
-                                            {% endfor %}
-                                        </div>
-                                        <p class="recipe-detail-section">{{ rec.desc }}</p>
-                                    </div>
-                                    <!-- Modal footer -->
-                                    <div class="modal-footer">
-                                        <a href="{% url 'recipe-detail' rec.id %}">Click here to see full recipe</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Similar Recipes by Nutrition -->
-                {% if similar_nutrition %}
-                    <div class="container-fluid titleCard">
-                        <h2 class="rowHeader text-dark">
-                            <span class="rowTitle">
-                                <div class="row-header-title">Similar Recipes by Nutrition</div>
-                            </span>
-                        </h2>
-                        <ul id="similarNutrSlider">
-                            {% for rec in similar_nutrition %}
-                                <li>
-                                    <div class="hovereffect">
-                                        <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <a href="#modal_{{ rec.id }}" data-toggle="modal">
-                                            <div class="overlay">
-                                                <h2>{{ rec.name }}</h2>
-                                                {% for _ in rec.rating %}
-                                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                                {% endfor %}
-                                                {% for _ in rec.rating_null %}
-                                                    <span class="fa fa-star star-center"></span>    
-                                                {% endfor %}
-                                            </div>
-                                        </a>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    <div class="block recipe-detail-nutr">
+                        <label>Sodium (% Daily Value):</label> 
+                        <span>{{ nutrition.3 }}</span>
                     </div>
-                    <!-- Similar Recipes by Nutrition Modals -->
-                    {% for rec in similar_nutrition %}
-                        <div class="modal fade" id="modal_{{ rec.id }}">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">            
-                                    <!-- Modal Header -->
-                                    <div class="modal-header">
-                                        <h1 class="modal-title recipe-detail-title">{{ rec.name }}</h1>
-                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                    </div>
-                                    <!-- Modal body -->
-                                    <div class="modal-body">
-                                        <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
-                                        <div>
-                                            {% for _ in rec.rating %}
-                                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
-                                            {% endfor %}
-                                            {% for _ in rec.rating_null %}
-                                                <span class="fa fa-star star-center"></span>    
-                                            {% endfor %}
-                                        </div>
-                                        <p class="recipe-detail-section">{{ rec.desc }}</p>
-                                    </div>
-                                    <!-- Modal footer -->
-                                    <div class="modal-footer">
-                                        <a href="{% url 'recipe-detail' rec.id %}">Click here to see full recipe</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+                    <div class="block recipe-detail-nutr">
+                        <label>Protein (% Daily Value):</label> 
+                        <span>{{ nutrition.4 }}</span>
+                    </div>
+                    <div class="block recipe-detail-nutr">
+                        <label>Saturated Fat (% Daily Value):</label> 
+                        <span>{{ nutrition.5 }}</span>
+                    </div>
+                    <div class="block recipe-detail-nutr">
+                        <label>Total Carbohydrate (% Daily Value):</label> 
+                        <span>{{ nutrition.6 }}</span>
+                    </div>
+                </div>             
             </div>
+            <!-- Recipe Steps -->
+            <div class="recipe-detail-section">
+                <h2>Steps</h2>
+                <ul class="">
+                    {% for step in steps %}
+                    <li class="">{{ step }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <!-- Recipe Tags -->
+            <div class="recipe-detail-section">
+                <h2>Tags</h2>
+                {% for tag in tags %}
+                <span href="#" class="badge badge-primary">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            <!-- Submit Rating -->
+            {% if not has_rated %}
+            <div class="recipe-detail-section">
+                <form method = "POST">
+                    {% csrf_token %}
+                    <fieldset class="form-group">
+                        <legend class="border-bottom mb-4">Rate This Recipe!</legend>
+                        {{ form }}
+                    </fieldset>
+                    <div class="form-group">
+                        <button class="btn btn-outline-info" type="submit">Submit</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            <!-- Similar Recipes -->
+            {% if similar_recipes_list %}
+                {% for kind, similar_recipes in similar_recipes_list %}
+                <div class="titleCard">
+                    <div class="rowTitle">Similar Recipes ({{ kind }})</div>
+                    <div class="recipe-slider">
+                        {% for recipe in similar_recipes %}
+                        <div class="hovereffect">
+                            <img height="209.3" src="{{ recipe.img_url }}"/>
+                            <a href="#modal_{{ recipe.id }}" data-toggle="modal">
+                                <div class="overlay star-center">
+                                    <h2>{{ recipe.name }}</h2>
+                                    {% for _ in recipe.rating %}
+                                        <span class="fa fa-star star-center recipe-detail-checked"></span>    
+                                    {% endfor %}
+                                    {% for _ in recipe.rating_null %}
+                                        <span class="fa fa-star star-center"></span>    
+                                    {% endfor %}
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                    {% for recipe in similar_recipes %}
+                    <div class="modal fade" id="modal_{{ recipe.id }}">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title">{{ recipe.name }}</h1>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <img class="" width="372.45" height="209.3" src="{{ recipe.img_url }}"/>
+                                    <div>
+                                        {% for _ in recipe.rating %}
+                                        <span class="fa fa-star star-center recipe-detail-checked"></span>
+                                        {% endfor %}
+                                        {% for _ in recipe.rating_null %}
+                                        <span class="fa fa-star star-center"></span>
+                                        {% endfor %}
+                                    </div>
+                                    <p>{{ recipe.description }}</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="{% url 'recipe-detail' recipe.id %}">View recipe</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
+</div>
 {% endblock content %}
