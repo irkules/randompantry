@@ -12,20 +12,16 @@ def home(request):
 def recipe_detail_view(request, pk):
     context = RecipeDetailContent.get_recipe_detail_context(pk)
     context['title'] = 'Random Pantry! - Recipe'
-    context['author'] = 'Food.com'
     if request.method == 'POST':
         form = UserReviewForm(request.POST)
         if form.is_valid():
-            RecipeDetailContent.add_review(
-                rating=form.cleaned_data['rating'],
-                review=form.cleaned_data['review'],
-                recipe_id=pk,
-                user_id=1
-            )
+            RecipeDetailContent.add_review(rating=form.cleaned_data['rating'], recipe_id=pk, user_id=1)
+            context['has_rated'] = True
         context['form'] = form
     else:
         context['form'] = UserReviewForm()
     return render(request, 'blog/recipe_detail.html', context)
 
 def about(request):
-    return render(request, 'blog/about.html', {'title': 'Recipe - About'})
+    context = { 'title': 'Recipe - About' }
+    return render(request, 'blog/about.html', context)

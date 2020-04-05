@@ -51,7 +51,7 @@ def update_home_cache(columns, values):
     subquery_set_list = [f'{columns[i]} = ARRAY{values[i]}::integer[]' for i in range(len(columns))]
     subquery_set = SEPERATOR.join(subquery_set_list)
     # Generate Subquery for INSERT Query
-    h_columns = ['recommended', 'favourites', 'make_again', 'top_rated']
+    h_columns = ['recommended', 'recommended_mlp', 'make_again', 'top_rated']
     invalid_columns = [col for col in columns if col not in h_columns]
     for col in invalid_columns:
         index = columns.index(col)
@@ -71,7 +71,7 @@ def update_home_cache(columns, values):
                 SET {subquery_set}
                 WHERE id = 1;
             ELSE
-                INSERT INTO blog_home (recommended, favourites, make_again, top_rated)
+                INSERT INTO blog_home (recommended, recommended_mlp, make_again, top_rated)
                 VALUES({subquery_values});
             END IF;
         END
@@ -127,7 +127,7 @@ def get_top_rated(columns=['id', 'name', 'description', 'img_url', 'rating'], n=
                 SET top_rated = top_rated_ids
                 WHERE id = 1;
             ELSE
-                INSERT INTO blog_home (recommended, favourites, make_again, top_rated)
+                INSERT INTO blog_home (recommended, recommended_mlp, make_again, top_rated)
                 VALUES(ARRAY[]::integer[], ARRAY[]::integer[], ARRAY[]::integer[], top_rated_ids);
             END IF;
         END
@@ -199,7 +199,7 @@ def get_make_again(columns=['id', 'name', 'description', 'img_url', 'rating'], n
                 SET make_again = make_again_ids
                 WHERE id = 1;
             ELSE
-                INSERT INTO blog_home (recommended, favourites, make_again, top_rated)
+                INSERT INTO blog_home (recommended, recommended_mlp, make_again, top_rated)
                 VALUES(ARRAY[]::integer[], ARRAY[]::integer[], make_again_ids, ARRAY[]::integer[]);
             END IF;
         END
@@ -309,10 +309,10 @@ def update_recipe_cache(recipe_id, columns, values):
     except:
         return False
 
-def insert_review(rating, review, recipe_id, user_id):
+def insert_review(rating, recipe_id, user_id):
     query = f'''
         INSERT INTO blog_review (rating, review, date, recipe_id, user_id)
-        VALUES({rating}, {review}, NOW(), {recipe_id}, {user_id});
+        VALUES({rating}, NULL, NOW(), {recipe_id}, {user_id});
         '''
     try:
         with connection.cursor() as cursor:

@@ -4,8 +4,7 @@
 
 # Random Pantry, A Recipe Recommender System
 
-[![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.herokuapp.com)](https://randompantry.live)
-[![travis](https://img.shields.io/travis/com/irkules/randompantry)]()
+[![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.live)](https://randompantry.live)
 [![last-commit](https://img.shields.io/github/last-commit/irkules/randompantry)](https://github.com/irkules/randompantry/commits/master)
 
 Random Pantry is a recipe recommender system that uses machine learning algorithms. It is designed to give you recipes that you will enjoy!
@@ -15,41 +14,25 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
 
 ### Access
 - Website URL: https://randompantry.live
-  
-  Active Hours: 09:00 - 17:00 Pacific Time (PT)
 
 ### Rating a Recipe
 
-### Clearing all ratings (for Global User only)
 
 ### Getting Recommendations
 
-### Refreshing Recommendations (Manually)
 
 ### Getting Similar Recipes
-
-### Refreshing Similar Recipes (Manually)
-
-### Tuning Recommendations (SVD++)
-- n_factors - The number of latent factors
-- n_epochs - The number of steps or iterations for Stochastic Gradient Descent algorithm
-- lr_all - The learning rate or step size for for all parameters
-- reg_all - The regularization term for all parameters
-
-### Tuning Recommendations (Neural Network)
 
 
 ## Technologies
 ### Languages & Frameworks
-* [Angular](https://angular.io/)
 * [Django](https://www.djangoproject.com/)
 * [Python](https://www.python.org)
-* [TypeScript](https://www.typescriptlang.org/)
 
 ### Machine Learning
 * [pandas](https://pandas.pydata.org/)
-* [scikit-learn](https://scikit-learn.org) - Truncated SVD and K-Nearest Neighbours
-* [SurPRISE](http://surpriselib.com/) - SVD++
+* [scikit-learn](https://scikit-learn.org) - Truncated SVD, K-Nearest Neighbours, and Multilayer Perceptron (Artificial Neural Network)
+* [SurPRISE](http://surpriselib.com/) - Matrix Factorization using SVD
 
 ### Database
 * [PostgreSQL](https://www.postgresql.org/)
@@ -76,11 +59,9 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
     - Initial implementation of Random Pantry
 - Version 2.0
     - Asynchronous Random Pantry with Celery and Honcho!
-    - Addition of Angular
     - Migration to Global User
     - Addition of Database Cache
-    - Addition of Model Tuning feature
-    - Addition of RecipeNet (A Recipe Recommender using Keras)
+    - Addition of RecipeNet (Multilayer Perceptron Model)
 
 ## Reference Papers
 - Francesco Ricci, Lior Rokach, Bracha Shapira, and Paul B. Kantor. Recommender Systems Handbook. 1st edition, 2010.

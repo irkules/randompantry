@@ -1,5 +1,13 @@
-from django import forms
+from django.forms import Form, ChoiceField
 
-class UserReviewForm(forms.Form):
-    rating = forms.ChoiceField(label='Rating', choices=((1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')))
-    review = forms.CharField(label='Review', max_length=100)
+class UserReviewForm(Form):
+    rating = ChoiceField(
+        label='Rating',
+        choices=(
+            (5, 'Excellent'),
+            (4, 'Very Good'),
+            (3, 'Good'),
+            (2, 'Fair'),
+            (1, 'Poor')
+        )
+    )

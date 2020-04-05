@@ -5,23 +5,14 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MultiLabelBinarizer, LabelEncoder, StandardScaler
-from surprise import Dataset, KNNBaseline, Reader, SVDpp
+from surprise import Dataset, KNNBaseline, Reader, SVD
 
 
 class RecipeNet:
     def __init__(self):
         self.model = make_pipeline(
             StandardScaler(),
-            MLPRegressor(
-                hidden_layer_sizes=(100, 100),
-                activation='relu',
-                solver='sgd',
-                alpha=0.0001,
-                max_iter=200,
-                random_state=2020,
-                verbose=True,
-                momentum=0.9
-            )
+            MLPRegressor(activation='relu', solver='sgd', alpha=0.0001, max_iter=200, momentum=0.9, random_state=2020)
         )
         self.recipe_le = LabelEncoder()
 
@@ -40,11 +31,12 @@ class RecipeNet:
         X_test = DataFrame({ 'user_id': [1] * len(self.encoded_ids), 'recipe_id': self.encoded_ids }).values
         y_pred = self.model.predict(X_test)
         pred_encoded_ids = (-y_pred).argsort()[:n]
-        return self.recipe_le.inverse_transform(pred_encoded_ids)
+        pred_ids = self.recipe_le.inverse_transform(pred_encoded_ids).tolist()
+        return pred_ids
 
 class RecipeRecommender:
-    def __init__(self, n_factors=20, n_epochs=20, lr_all=0.007, reg_all=0.02):
-        self.model = SVDpp(n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all, random_state=2020)
+    def __init__(self, n_factors=100, n_epochs=20, lr_all=0.005, reg_all=0.02):
+        self.model = SVD(n_factors=n_factors, n_epochs=n_epochs, lr_all=lr_all, reg_all=reg_all, random_state=2020)
 
     def fit(self, reviews):
         # SurPRISE supports only pandas DataFrame or folds as data input

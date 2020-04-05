@@ -2,13 +2,12 @@
 {% load static %}
 {% block content %}
 
-<!-- Recommended -->
-
+<!-- Recommended (SVD) -->
 {% if recommended %}
     <div class="container-fluid titleCard">
         <h2 class="rowHeader">
             <span class="rowTitle">
-                <div class="row-header-title">Recommended</div>
+                <div class="row-header-title">Recommended (SVD)</div>
             </span>
         </h2>
         <ul id="recSlider">
@@ -32,7 +31,7 @@
             {% endfor %}
         </ul>
     </div>
-    <!-- Recommendation Modals -->
+    <!-- Recommendation (SVD) Modals -->
     {% for rec in recommended %}
         <div class="modal fade" id="modal_{{ rec.id }}">
             <div class="modal-dialog modal-lg">
@@ -65,8 +64,69 @@
     {% endfor %}
 {% endif %}
 
-<!-- Make Again -->
+<!-- Recommended (MLP) -->
+{% if recommended_mlp %}
+    <div class="container-fluid titleCard">
+        <h2 class="rowHeader">
+            <span class="rowTitle">
+                <div class="row-header-title">Recommended (Feedforward Neural Network)</div>
+            </span>
+        </h2>
+        <ul id="recSlider">
+            {% for rec in recommended_mlp %}
+                <li>
+                    <div class="hovereffect">
+                        <img width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                        <a href="#modal_{{ rec.id }}" data-toggle="modal">
+                            <div class="overlay star-center">
+                                <h2>{{ rec.name }}</h2>
+                                {% for _ in rec.rating %}
+                                    <span class="fa fa-star star-center recipe-detail-checked"></span>    
+                                {% endfor %}
+                                {% for _ in rec.rating_null %}
+                                    <span class="fa fa-star star-center"></span>    
+                                {% endfor %}
+                            </div>
+                        </a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- Recommendation (MLP) Modals -->
+    {% for rec in recommended_mlp %}
+        <div class="modal fade" id="modal_{{ rec.id }}">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">            
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h1 class="modal-title recipe-detail-title">{{ rec.name }}</h1>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <img class="recipe-detail-section" width="372.45" height="209.3" src="{{ rec.img_url }}"/>
+                        <div>
+                            {% for _ in rec.rating %}
+                                <span class="fa fa-star star-center recipe-detail-checked"></span>    
+                            {% endfor %}
+                            {% for _ in rec.rating_null %}
+                                <span class="fa fa-star star-center"></span>    
+                            {% endfor %}
+                        </div>
+                        <p class="recipe-detail-section">{{ rec.desc }}</p>
+                    </div>
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <a href="{% url 'recipe-detail' rec.id %}">Click here to see full recipe</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
 
+<!-- Make Again -->
 {% if make_again %}
     <div class="container-fluid titleCard">
         <h2 class="rowHeader">
@@ -129,7 +189,6 @@
 {% endif %}
 
 <!-- Top Rated -->
-
 {% if top_rated %}
     <div class="container-fluid titleCard">
         <h2 class="rowHeader">
@@ -190,9 +249,5 @@
         </div>
     {% endfor %}
 {% endif %}
-
-<!-- TODO: Top Tag -->
-
-<!-- TODO: Nutrition Pick -->
 
 {% endblock content %}
