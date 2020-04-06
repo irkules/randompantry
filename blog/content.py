@@ -108,7 +108,9 @@ class RecipeDetailContent(Content):
         current_recipe = db.get_recipe(recipe_id)
         if not current_recipe:
             return {}
-        current_recipe['description'] = current_recipe['description'].capitalize()
+        description = current_recipe['description']
+        if description is not None:
+            current_recipe['description'] = description.capitalize()
         current_recipe['ingredients'] = [ingredient.capitalize() for ingredient in current_recipe['ingredients']]
         steps = []
         for step in current_recipe['steps']:
