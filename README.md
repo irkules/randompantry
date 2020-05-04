@@ -13,7 +13,7 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
 ## Usage
 
 ### Access
-- Website URL: https://randompantry.live
+- Website URL: https://randompantry.herokuapp.com
 
 ### Rating a Recipe
 
