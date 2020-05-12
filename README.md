@@ -4,7 +4,7 @@
 
 # RANDOM PANTRY, A Recipe Recommender System
 
-[![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.live)](https://randompantry.live)
+[![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.herokuapp.com)](https://randompantry.herokuapp.com)
 [![last-commit](https://img.shields.io/github/last-commit/irkules/randompantry)](https://github.com/irkules/randompantry/commits/master)
 
 Random Pantry is a recipe recommender system that uses machine learning algorithms. It is designed to give you recipes that you will enjoy!
