@@ -1,9 +1,6 @@
 from blog import db, tasks
 from blog.modeling import NearestRecipes, NearestRecipesBaseline
-from blog.redis import RECOMMENDED_KEY, RECOMMENDED_MLP_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY
-from django.core.cache import cache
 from randompantry.settings import USE_CELERY
-from statistics import mean
 
 
 class Content:
@@ -35,43 +32,29 @@ class HomeContent(Content):
 
     @staticmethod
     def get_recommended(reviews):
-        if RECOMMENDED_KEY in cache:
-            recommended_ids = cache.get(RECOMMENDED_KEY)
-            return HomeContent.get_recipes(recommended_ids)
         db_cache = db.get_home_cache(columns=['recommended'])
         if 'recommended' in db_cache:
             recommended_ids = db_cache['recommended']
-            cache.set(RECOMMENDED_KEY, recommended_ids)
             return HomeContent.get_recipes(recommended_ids)
         recommended_ids = tasks.get_recommended_ids(reviews)
-        cache.set(RECOMMENDED_KEY, recommended_ids)
         db.update_home_cache(columns=['recommended'], values=[recommended_ids])
         return HomeContent.get_recipes(recommended_ids)
 
     @staticmethod
     def get_recommended_mlp(reviews):
-        if RECOMMENDED_MLP_KEY in cache:
-            recommended_ids = cache.get(RECOMMENDED_MLP_KEY)
-            return HomeContent.get_recipes(recommended_ids)
         db_cache = db.get_home_cache(columns=['recommended_mlp'])
         if 'recommended_mlp' in db_cache:
             recommended_ids = db_cache['recommended_mlp']
-            cache.set(RECOMMENDED_MLP_KEY, recommended_ids)
             return HomeContent.get_recipes(recommended_ids)
         recommended_ids = tasks.get_recommended_mlp_ids(reviews)
-        cache.set(RECOMMENDED_MLP_KEY, recommended_ids)
         db.update_home_cache(columns=['recommended_mlp'], values=[recommended_ids])
         return HomeContent.get_recipes(recommended_ids)
 
     @staticmethod
     def get_make_again():
-        if MAKE_AGAIN_KEY in cache:
-            make_again_ids = cache.get(MAKE_AGAIN_KEY)
-            return RecipeDetailContent.get_recipes(make_again_ids)
         db_cache = db.get_home_cache(columns=['make_again'])
         if 'make_again' in db_cache:
             make_again_ids = db_cache['make_again']
-            cache.set(MAKE_AGAIN_KEY, make_again_ids)
             return RecipeDetailContent.get_recipes(make_again_ids)
         make_again = db.get_make_again()
         for recipe in make_again:
@@ -79,18 +62,13 @@ class HomeContent(Content):
             recipe['rating'] = range(current_rating)
             recipe['rating_null'] = range(5 - current_rating)
         make_again_ids = [recipe['id'] for recipe in make_again]
-        cache.set(MAKE_AGAIN_KEY, make_again_ids)
         return RecipeDetailContent.get_recipes(make_again_ids)
 
     @staticmethod
     def get_top_rated():
-        if TOP_RATED_KEY in cache:
-            top_rated_ids = cache.get(TOP_RATED_KEY)
-            return RecipeDetailContent.get_recipes(top_rated_ids)
         db_cache = db.get_home_cache(columns=['top_rated'])
         if 'top_rated' in db_cache:
             top_rated_ids = db_cache['top_rated']
-            cache.set(TOP_RATED_KEY, top_rated_ids)
             return RecipeDetailContent.get_recipes(top_rated_ids)
         top_rated = db.get_top_rated()
         for recipe in top_rated:
@@ -98,7 +76,6 @@ class HomeContent(Content):
             recipe['rating'] = range(current_rating)
             recipe['rating_null'] = range(5 - current_rating)
         top_rated_ids = [recipe['id'] for recipe in top_rated]
-        cache.set(TOP_RATED_KEY, top_rated_ids)
         return top_rated
 
 class RecipeDetailContent(Content):
@@ -176,4 +153,3 @@ class RecipeDetailContent(Content):
             tasks.insert_review.delay(rating, recipe_id, user_id)
         else:
             tasks.insert_review(rating, recipe_id, user_id)
-        cache.delete_many([RECOMMENDED_KEY, RECOMMENDED_MLP_KEY, MAKE_AGAIN_KEY, TOP_RATED_KEY])
