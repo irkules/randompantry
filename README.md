@@ -64,10 +64,13 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
 - Version 1.0
     - Initial implementation of Random Pantry
 - Version 2.0
-    - Asynchronous Random Pantry with Celery and Honcho (Synchronous on Heroku)
+    - Asynchronous Random Pantry with Celery and Honcho
     - Migration to Global User
     - Addition of Database Cache
     - Addition of RecipeNet (Experimental MLP Model)
+- Latest
+    - Disabled Redis and Celery to allow for hosting on Heroku Free Dyno.
+    - Removed RecipeNet
 
 
 ## Reference Papers

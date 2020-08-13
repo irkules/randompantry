@@ -79,8 +79,4 @@ $(document).ready(function() {
     $('.recipe-slider-focus').slick(focusSlickSettings);
     $('.recipe-slider-recommended').slick(recSlickSettings);
     $('.recipe-slider').slick(slickSettings);
-    $('.recipe-slider-focus').fadeIn(2000);
-    $('.recipe-slider-home').fadeIn(2000);
-    $('.loading-animation').fadeOut(2000);
-    $('.rp-about-img').fadeIn(2000);
 });

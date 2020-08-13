@@ -23,7 +23,6 @@ class HomeContent(Content):
         home = {
             'recipes_list': [
                 ('Recommended (Matrix Factorization SVD)', HomeContent.get_recommended(reviews)),
-                ('Recommended (Feedforward Neural Network)', HomeContent.get_recommended_mlp(reviews)),
                 ('Make Again', HomeContent.get_make_again()),
                 ('Top Rated', HomeContent.get_top_rated())
             ]
@@ -38,16 +37,6 @@ class HomeContent(Content):
             return HomeContent.get_recipes(recommended_ids)
         recommended_ids = tasks.get_recommended_ids(reviews)
         db.update_home_cache(columns=['recommended'], values=[recommended_ids])
-        return HomeContent.get_recipes(recommended_ids)
-
-    @staticmethod
-    def get_recommended_mlp(reviews):
-        db_cache = db.get_home_cache(columns=['recommended_mlp'])
-        if 'recommended_mlp' in db_cache:
-            recommended_ids = db_cache['recommended_mlp']
-            return HomeContent.get_recipes(recommended_ids)
-        recommended_ids = tasks.get_recommended_mlp_ids(reviews)
-        db.update_home_cache(columns=['recommended_mlp'], values=[recommended_ids])
         return HomeContent.get_recipes(recommended_ids)
 
     @staticmethod

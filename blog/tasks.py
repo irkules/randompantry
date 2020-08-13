@@ -14,8 +14,7 @@ def app_startup_tasks(*args, **kwargs):
 def refresh_home_content():
     reviews = db.get_reviews(columns=['user_id', 'recipe_id', 'rating'])
     recommended_ids = get_recommended_ids(reviews)
-    recommended_mlp_ids = get_recommended_mlp_ids(reviews)
-    db.update_home_cache(columns=['recommended', 'recommended_mlp'], values=[recommended_ids, recommended_mlp_ids])
+    db.update_home_cache(columns=['recommended'], values=[recommended_ids])
     db.get_make_again(columns=['id'], update_only=True)
     db.get_top_rated(columns=['id'], update_only=True)
     return None
@@ -23,13 +22,6 @@ def refresh_home_content():
 @shared_task
 def get_recommended_ids(reviews):
     recommender = RecipeRecommender()
-    recommender.fit(reviews)
-    recommended_ids = recommender.predict()
-    return recommended_ids
-
-@shared_task
-def get_recommended_mlp_ids(reviews):
-    recommender = RecipeNet()
     recommender.fit(reviews)
     recommended_ids = recommender.predict()
     return recommended_ids
