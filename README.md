@@ -2,7 +2,7 @@
 ![randompantry](./randompantry.png)
 
 
-# RANDOM PANTRY, A Recipe Recommender System
+# Random Pantry
 
 [![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.herokuapp.com)](https://randompantry.herokuapp.com)
 [![last-commit](https://img.shields.io/github/last-commit/irkules/randompantry)](https://github.com/irkaal/randompantry/commits/master)
