@@ -134,20 +134,11 @@ MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 
-REDIS_URL = environ.get('REDIS_URL')
-CACHES = {
-    'default': {
-        'BACKEND': 'redis_cache.RedisCache',
-        'LOCATION': REDIS_URL
-    }
-}
-
-
 # Celery config for production
 # https://qiita.com/hayatek/items/a54e5556995d0ada9483
 
 USE_CELERY = environ.get('USE_CELERY') == 'True'
 
-CELERY_BROKER_URL = REDIS_URL
+CELERY_BROKER_URL = ''
 CELERY_BROKER_TRANSPORT_OPTIONS = { 'max_connections': 2 }
 CELERY_TIMEZONE = TIME_ZONE

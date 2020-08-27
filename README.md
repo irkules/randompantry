@@ -1,11 +1,11 @@
 
-![randompantry](./media/randompantry.png)
+![randompantry](./randompantry.png)
 
 
-# RANDOM PANTRY, A Recipe Recommender System
+# Random Pantry
 
-[![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.live)](https://randompantry.live)
-[![last-commit](https://img.shields.io/github/last-commit/irkules/randompantry)](https://github.com/irkules/randompantry/commits/master)
+[![website](https://img.shields.io/website?url=https%3A%2F%2Frandompantry.herokuapp.com)](https://randompantry.herokuapp.com)
+[![last-commit](https://img.shields.io/github/last-commit/irkules/randompantry)](https://github.com/irkaal/randompantry/commits/master)
 
 Random Pantry is a recipe recommender system that uses machine learning algorithms. It is designed to give you recipes that you will enjoy!
 
@@ -48,12 +48,6 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
 
 ### Database
 * [PostgreSQL](https://www.postgresql.org/)
-* [Redis](https://redis.io/) - Backend Cache and Celery Broker
-
-### Others
-* [Celery](http://www.celeryproject.org) - Distributed Task Queue
-* [Honcho](https://honcho.readthedocs.io/en/latest/) - Procfile-based Application Manager
-
 
 ## Data
 * [Food.com Recipes and Interactions](https://www.kaggle.com/shuyangli94/food-com-recipes-and-user-interactions) - Kaggle
@@ -70,10 +64,14 @@ Random Pantry is a recipe recommender system that uses machine learning algorith
 - Version 1.0
     - Initial implementation of Random Pantry
 - Version 2.0
-    - Asynchronous Random Pantry with Celery and Honcho!
+    - Asynchronous Random Pantry with Celery and Honcho
     - Migration to Global User
     - Addition of Database Cache
-    - Addition of RecipeNet (Multilayer Perceptron Model)
+    - Addition of RecipeNet (Experimental MLP Model)
+- Latest
+    - Disabled Redis and Celery to allow for hosting on Heroku Free Dyno.
+    - Removed RecipeNet
+
 
 ## Reference Papers
 - Francesco Ricci, Lior Rokach, Bracha Shapira, and Paul B. Kantor. Recommender Systems Handbook. 1st edition, 2010.

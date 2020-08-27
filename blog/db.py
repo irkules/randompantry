@@ -321,6 +321,18 @@ def insert_review(rating, recipe_id, user_id):
     except:
         return False
 
+def reset_reviews():
+    query = '''
+        DELETE FROM blog_review
+        WHERE user_id = 1 AND recipe_id != 2670;
+    '''
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+        return True
+    except:
+        return False
+
 # endregion Recipe Details Page
 
 
